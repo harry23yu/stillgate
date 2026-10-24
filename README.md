@@ -4,6 +4,8 @@ Sensory-aware airport travel app for neurodivergent and sensory-sensitive travel
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app). Runs in **Expo Go only** — no native modules.
 
+Backend (Convex) setup, functions and the data-import endpoint: see [BACKEND.md](BACKEND.md).
+
 ## Get started
 
 1. Install dependencies
