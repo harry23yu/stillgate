@@ -81,3 +81,31 @@ export const nearestQuietSpots = query({
     };
   },
 });
+
+// Demo only: we cannot trigger a real gate change, so this returns a canned event.
+// It is always labeled simulated; the app must show that label. The new gate is one that has
+// a walk-time entry so the follow-up nearestQuietSpots call returns a real (estimated) time.
+// No wall clock here (queries shouldn't read it), so there is no timestamp.
+const SIMULATED_CHANGES: Record<string, { fromGate: string; toGate: string }> = {
+  SFO: { fromGate: "B7", toGate: "C2" },
+};
+
+export const simulateGateChange = query({
+  args: {
+    airportCode: v.string(),
+    flightNumber: v.optional(v.string()),
+  },
+  handler: async (_ctx, args) => {
+    const code = args.airportCode.toUpperCase();
+    const change = SIMULATED_CHANGES[code];
+    if (!change) return null;
+    return {
+      simulated: true as const,
+      label: "Simulated gate change (demo data, not a real flight)",
+      airportCode: code,
+      flightNumber: args.flightNumber?.trim().toUpperCase() ?? "XX123",
+      fromGate: change.fromGate,
+      toGate: change.toGate,
+    };
+  },
+});
