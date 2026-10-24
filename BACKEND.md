@@ -82,6 +82,23 @@ Things the UI must handle:
 - `hours` is free text and is not checked against the current time.
 - Returns `null` for an unknown airport.
 
+### `gateChange:gateChangeSteps`
+
+```bash
+npx convex run gateChange:gateChangeSteps '{"airportCode":"SFO","gate":"C2","fromGate":"B7","profile":{"noise":"high","crowds":"medium","lighting":"low","whatHelps":[],"firstFlight":false,"detailLevel":"brief"}}'
+```
+
+Builds the step sentences for a gate change in plain code, from the database and the walk-time table (no LLM).
+Same inputs as `nearestQuietSpots` plus an optional `fromGate`. Returns the same fields plus:
+
+- `steps`: string[]. `brief` gives the gate change and the nearest quiet place. `detailed` adds the hours, the
+  notes, and "This information has not been verified yet." when the spot has no verified date.
+- `spot`: the top spot (or `null` when the airport has none).
+- When the walk time is unknown, the step says so instead of guessing.
+- Returns `null` for an unknown airport.
+
+Demo chain: `simulateGateChange` -> `gateChangeSteps` (use its `toGate` and `fromGate`) -> `phrase:phraseSteps` with `steps`.
+
 ### `phrase:phraseSteps` (action)
 
 ```bash
