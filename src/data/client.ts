@@ -1,6 +1,7 @@
 import {
   sampleChsFlight,
   sampleChsFlightAfterGateChange,
+  sampleDcaFlight,
   sampleFlight,
   sampleFlightAfterGateChange,
 } from '@/data/mock/flight';
@@ -19,7 +20,7 @@ const airportsByCode: Record<AirportCode, Airport> = {
   CHS: chsAirport,
 };
 
-const sampleFlights = [sampleFlight, sampleChsFlight];
+const sampleFlights = [sampleFlight, sampleChsFlight, sampleDcaFlight];
 const sampleFlightsAfterGateChange = [sampleFlightAfterGateChange, sampleChsFlightAfterGateChange];
 
 /** Schematic position of the "You" marker, shared by the dashboard preview and the map. */
@@ -42,9 +43,10 @@ export function estimateWalkMinutes(
  * then pick the one nearest the gate's boarding area. No model decides
  * this — it is a plain nearest-neighbor lookup over the gate-to-area table.
  */
-export function getNearestPlace(airport: Airport, gate: string, type: PlaceType): Place | null {
+export function getNearestPlace(airport: Airport, gate: string | null, type: PlaceType): Place | null {
   const matches = airport.places.filter((place) => place.type === type);
   if (matches.length === 0) return null;
+  if (!gate) return null;
 
   const areaId = airport.gateAreas[gate];
   const center = areaId ? airport.areaCenters[areaId] : undefined;
@@ -56,7 +58,7 @@ export function getNearestPlace(airport: Airport, gate: string, type: PlaceType)
 }
 
 /** Thin wrapper kept for existing call sites (Map, Gate Change). */
-export function getNearestQuietPlace(airport: Airport, gate: string): Place | null {
+export function getNearestQuietPlace(airport: Airport, gate: string | null): Place | null {
   return getNearestPlace(airport, gate, 'quiet');
 }
 
@@ -64,13 +66,25 @@ export async function getAirport(code: AirportCode): Promise<Airport | null> {
   return airportsByCode[code] ?? null;
 }
 
+/** Returns a detailed floor-plan code only when Stillgate has that airport map. */
+export function getSupportedAirportCode(code: string | undefined): AirportCode | null {
+  return code === 'SFO' || code === 'CHS' ? code : null;
+}
+
 /**
  * The real SFO Flight and Reference Data API looks up a flight by airline
  * code, flight number AND a date range (CLAUDE.md §6) — a flight number
  * alone isn't enough to find a specific flight. `date` is a YYYY-MM-DD string.
  */
-export async function getFlightStatus(flightNumber: string, date: string): Promise<FlightLookup | null> {
-  return sampleFlights.find((flight) => matchesFlight(flight, flightNumber, date)) ?? null;
+export async function getFlightStatus(
+  flightNumber: string,
+  date: string,
+  airportCode?: string,
+): Promise<FlightLookup | null> {
+  const normalizedNumber = normalizeFlightNumber(flightNumber);
+  return sampleFlights.find((flight) =>
+    matchesFlight(flight, normalizedNumber, date) && (!airportCode || flight.origin.code === airportCode),
+  ) ?? null;
 }
 
 /** Returns the flight's state after the labeled, simulated gate change. */
@@ -79,6 +93,10 @@ export async function simulateGateChange(flightNumber: string, date: string): Pr
 }
 
 function matchesFlight(flight: FlightLookup, flightNumber: string, date: string): boolean {
-  return flight.flight === flightNumber && flight.scheduledDeparture.startsWith(date);
+  return normalizeFlightNumber(flight.flight) === flightNumber && flight.scheduledDeparture.startsWith(date);
+}
+
+export function normalizeFlightNumber(flightNumber: string): string {
+  return flightNumber.toUpperCase().replace(/[\s-]+/g, '');
 }
 

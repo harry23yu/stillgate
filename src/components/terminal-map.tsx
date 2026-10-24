@@ -10,7 +10,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Colors, Spacing } from '@/constants/theme';
 import { estimateWalkMinutes, getAirport, YOU_POSITION } from '@/data/client';
 import type { Airport, AirportCode, FlightLookup, Place, PlaceType } from '@/data/types';
-import { focusForGate, mapPointForGate, mapPointForPlace, MAP_IMAGE_SIZE, type AirportMapFocus } from '@/lib/sfo-map-layout';
+import { focusForGate, mapPointForGate, mapPointForPlace, MAP_IMAGE_SIZE, type AirportMapFocus, type MapPoint } from '@/lib/sfo-map-layout';
 
 const FILTERS: { type: PlaceType; label: string }[] = [
   { type: 'quiet', label: 'Quiet spots' },
@@ -102,6 +102,7 @@ export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapPr
     food: airportCode === 'CHS',
   }));
   const [selectedId, setSelectedId] = useState<string | null>(focusPlaceId ?? null);
+  const [selectedCluster, setSelectedCluster] = useState<Place[] | null>(null);
   const [highlightedId, setHighlightedId] = useState<string | null>(focusPlaceId ?? null);
   const [mapFocus, setMapFocus] = useState<AirportMapFocus>('all');
   const [zoom, setZoom] = useState(1);
@@ -191,10 +192,18 @@ export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapPr
 
   function toggleFilter(type: PlaceType) {
     setActiveFilters((current) => ({ ...current, [type]: !current[type] }));
+    setSelectedId(null);
+    setSelectedCluster(null);
   }
 
   function selectPlace(place: Place) {
     setSelectedId(place.id);
+    setSelectedCluster(null);
+  }
+
+  function selectCluster(places: Place[]) {
+    setSelectedId(null);
+    setSelectedCluster(places);
   }
 
   function handleTakeMeThere(place: Place) {
@@ -205,6 +214,7 @@ export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapPr
   function focusMap(next: AirportMapFocus) {
     setMapFocus(next);
     setSelectedId(null);
+    setSelectedCluster(null);
     setZoom(next === 'all' ? 1 : 1.8);
   }
 
@@ -223,8 +233,9 @@ export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapPr
     mapFocus === 'all' || place.terminal === mapFocus || (mapFocus === 'intl' && place.terminal.startsWith('intl-'));
   const pins = airport.places.filter((place) => place.type !== 'loud' && activeFilters[place.type] && isInFocus(place));
   const loudZones = airport.places.filter((place) => place.type === 'loud' && activeFilters.loud && isInFocus(place));
-  const gatePoint = flight ? mapPointForGate(flight.gate, airportCode) : null;
-  const flightFocus = flight ? focusForGate(flight.gate, airportCode) : null;
+  const markerGroups = clusterPlaceMarkers([...loudZones, ...pins], imageLayout, imageSize, airportCode);
+  const gatePoint = flight?.gate ? mapPointForGate(flight.gate, airportCode) : null;
+  const flightFocus = flight?.gate ? focusForGate(flight.gate, airportCode) : null;
 
   return (
     <View style={styles.container}>
@@ -232,9 +243,13 @@ export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapPr
         <View style={styles.demoNotice}>
           <IconSymbol name="info.circle.fill" size={18} color={Colors.primary} />
           <View style={styles.demoNoticeCopy}>
-            <ThemedText type="smallBold">Charleston demo map</ThemedText>
+            <ThemedText type="smallBold">
+              {airportCode === 'CHS' ? 'Charleston demo map' : 'Approximate map locations'}
+            </ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
-              The map is from CHS. Place pins are examples and haven’t been verified.
+              {airportCode === 'CHS'
+                ? 'The map is from CHS. Place pins are examples and haven’t been verified.'
+                : 'Place and gate markers are approximate. Check airport signs for current directions.'}
             </ThemedText>
           </View>
         </View>
@@ -280,10 +295,10 @@ export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapPr
       <View style={styles.mapTools}>
         <ThemedText type="small" themeColor="textSecondary">Zoom in for gate details, then drag to explore.</ThemedText>
         <View style={styles.zoomControls}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Zoom out" accessibilityState={{ disabled: zoom <= 1 }} disabled={zoom <= 1} onPress={() => setZoom((value) => Math.max(1, Number((value - 0.4).toFixed(1))))} style={[styles.zoomButton, zoom <= 1 && styles.zoomButtonDisabled]}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Zoom out" accessibilityState={{ disabled: zoom <= 1 }} disabled={zoom <= 1} onPress={() => { setSelectedCluster(null); setSelectedId(null); setZoom((value) => Math.max(1, Number((value - 0.4).toFixed(1)))); }} style={[styles.zoomButton, zoom <= 1 && styles.zoomButtonDisabled]}>
             <IconSymbol name="minus" size={18} color={Colors.text} />
           </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel="Zoom in" accessibilityState={{ disabled: zoom >= 2.6 }} disabled={zoom >= 2.6} onPress={() => setZoom((value) => Math.min(2.6, Number((value + 0.4).toFixed(1))))} style={[styles.zoomButton, zoom >= 2.6 && styles.zoomButtonDisabled]}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Zoom in" accessibilityState={{ disabled: zoom >= 2.6 }} disabled={zoom >= 2.6} onPress={() => { setSelectedCluster(null); setSelectedId(null); setZoom((value) => Math.min(2.6, Number((value + 0.4).toFixed(1)))); }} style={[styles.zoomButton, zoom >= 2.6 && styles.zoomButtonDisabled]}>
             <IconSymbol name="plus" size={18} color={Colors.text} />
           </Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel="Show whole airport" onPress={() => focusMap('all')} style={styles.zoomButton}>
@@ -321,39 +336,59 @@ export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapPr
                     accessibilityLabel={`${airport.name} airport overview map`}
                   />
 
-            {loudZones.map((place) => (
-              <Pressable
-                key={place.id}
-                onPress={() => selectPlace(place)}
-                accessibilityRole="button"
-                accessibilityLabel={airportCode === 'CHS'
-                  ? `${place.name}, sample busy area, not measured`
-                  : `${place.name}, typically busy, estimate`}
-                style={[
-                  styles.loudZone,
-                  mapPositionStyle(mapPointForPlace(place, airportCode), imageLayout, imageSize),
-                  selectedId === place.id && styles.loudZoneSelected,
-                ]}>
-                <IconSymbol name="waveform" size={15} color={Colors.estimateText} />
-              </Pressable>
-            ))}
+            {markerGroups.map((group) => {
+              const key = group.places.map((place) => place.id).join(':');
+              if (group.places.length > 1) {
+                return (
+                  <Pressable
+                    key={key}
+                    onPress={() => selectCluster(group.places)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${group.places.length} nearby places. Tap to choose one.`}
+                    accessibilityHint="Opens a list of places at this map location."
+                    style={[styles.placeCluster, mapPositionStyle(group.point, imageLayout, imageSize)]}>
+                    <ThemedText type="smallBold" style={styles.placeClusterCount}>{group.places.length}</ThemedText>
+                  </Pressable>
+                );
+              }
 
-            {pins.map((place) => (
-              <Pressable
-                key={place.id}
-                onPress={() => selectPlace(place)}
-                accessibilityRole="button"
-                accessibilityLabel={`${airportCode === 'CHS' ? CHS_TYPE_LABEL[place.type] : TYPE_LABEL[place.type]}: ${place.name}`}
-                hitSlop={8}
-                style={[styles.pin, mapPositionStyle(mapPointForPlace(place, airportCode), imageLayout, imageSize)]}>
-                {highlightedId === place.id && <View style={styles.pinHighlightRing} />}
-                <IconSymbol
-                  name={PIN_ICON[place.type as 'quiet' | 'service' | 'food']}
-                  size={26}
-                  color={place.type === 'quiet' ? Colors.primary : Colors.border}
-                />
-              </Pressable>
-            ))}
+              const [place] = group.places;
+              if (place.type === 'loud') {
+                return (
+                  <Pressable
+                    key={place.id}
+                    onPress={() => selectPlace(place)}
+                    accessibilityRole="button"
+                    accessibilityLabel={airportCode === 'CHS'
+                      ? `${place.name}, sample busy area, not measured`
+                      : `${place.name}, typically busy, estimate`}
+                    style={[
+                      styles.loudZone,
+                      mapPositionStyle(group.point, imageLayout, imageSize),
+                      selectedId === place.id && styles.loudZoneSelected,
+                    ]}>
+                    <IconSymbol name="waveform" size={15} color={Colors.estimateText} />
+                  </Pressable>
+                );
+              }
+
+              return (
+                <Pressable
+                  key={place.id}
+                  onPress={() => selectPlace(place)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${airportCode === 'CHS' ? CHS_TYPE_LABEL[place.type] : TYPE_LABEL[place.type]}: ${place.name}`}
+                  hitSlop={8}
+                  style={[styles.pin, mapPositionStyle(group.point, imageLayout, imageSize)]}>
+                  {highlightedId === place.id && <View style={styles.pinHighlightRing} />}
+                  <IconSymbol
+                    name={PIN_ICON[place.type]}
+                    size={26}
+                    color={place.type === 'quiet' ? Colors.primary : Colors.border}
+                  />
+                </Pressable>
+              );
+            })}
 
             {gatePoint && flight && (
               <View style={[styles.flightGateMarker, mapPositionStyle(gatePoint, imageLayout, imageSize)]}>
@@ -389,6 +424,12 @@ export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapPr
             Choose Concourse A or B above to zoom in. Gate and amenity details have not been added to this example.
           </ThemedText>
         </Card>
+      ) : selectedCluster ? (
+        <NearbyPlacesCard
+          places={selectedCluster}
+          airportCode={airportCode}
+          onSelect={selectPlace}
+        />
       ) : selectedPlace ? (
         <PlaceCard
           place={selectedPlace}
@@ -410,6 +451,65 @@ export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapPr
   );
 }
 
+type PlaceMarkerGroup = { places: Place[]; point: MapPoint };
+type LocatedPlaceMarker = { place: Place; point: MapPoint; screenX: number; screenY: number };
+
+const PLACE_MARKER_CLEARANCE = 48;
+
+function clusterPlaceMarkers(
+  places: Place[],
+  image: { left: number; top: number; width: number; height: number },
+  imageSize: { width: number; height: number },
+  airportCode: AirportCode,
+): PlaceMarkerGroup[] {
+  if (image.width <= 0 || image.height <= 0) return [];
+
+  const markers: LocatedPlaceMarker[] = places.map((place) => {
+    const point = mapPointForPlace(place, airportCode);
+    return {
+      place,
+      point,
+      screenX: image.left + (point.x / imageSize.width) * image.width,
+      screenY: image.top + (point.y / imageSize.height) * image.height,
+    };
+  });
+  const clusters: LocatedPlaceMarker[][] = [];
+
+  for (const marker of markers) {
+    let nearestCluster: LocatedPlaceMarker[] | null = null;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+
+    for (const cluster of clusters) {
+      const fitsCluster = cluster.every((other) =>
+        Math.hypot(marker.screenX - other.screenX, marker.screenY - other.screenY) < PLACE_MARKER_CLEARANCE,
+      );
+      if (!fitsCluster) continue;
+
+      const centerX = cluster.reduce((sum, other) => sum + other.screenX, 0) / cluster.length;
+      const centerY = cluster.reduce((sum, other) => sum + other.screenY, 0) / cluster.length;
+      const distance = Math.hypot(marker.screenX - centerX, marker.screenY - centerY);
+      if (distance < nearestDistance) {
+        nearestCluster = cluster;
+        nearestDistance = distance;
+      }
+    }
+
+    if (!nearestCluster) {
+      clusters.push([marker]);
+      continue;
+    }
+    nearestCluster.push(marker);
+  }
+
+  return clusters.map((cluster) => ({
+    places: cluster.map(({ place }) => place),
+    point: {
+      x: cluster.reduce((sum, marker) => sum + marker.point.x, 0) / cluster.length,
+      y: cluster.reduce((sum, marker) => sum + marker.point.y, 0) / cluster.length,
+    },
+  }));
+}
+
 function mapPositionStyle(
   point: { x: number; y: number },
   image: { left: number; top: number; width: number; height: number },
@@ -429,6 +529,55 @@ function LegendItem({ icon, color, label }: { icon: 'moon.zzz.fill' | 'info.circ
         {label}
       </ThemedText>
     </View>
+  );
+}
+
+function NearbyPlacesCard({
+  places,
+  airportCode,
+  onSelect,
+}: {
+  places: Place[];
+  airportCode: AirportCode;
+  onSelect: (place: Place) => void;
+}) {
+  return (
+    <Card>
+      <View style={styles.cardHeader}>
+        <ThemedText type="subtitle">Nearby places</ThemedText>
+        <Pill variant="neutral">{`${places.length} places`}</Pill>
+      </View>
+      <ThemedText type="small" themeColor="textSecondary">
+        These markers are close together at this zoom. Choose one to see its details.
+      </ThemedText>
+      <View style={styles.nearbyPlacesList}>
+        {places.map((place) => {
+          const typeLabel = airportCode === 'CHS' ? CHS_TYPE_LABEL[place.type] : TYPE_LABEL[place.type];
+          const icon = place.type === 'loud' ? 'waveform' : PIN_ICON[place.type];
+          const iconColor = place.type === 'quiet'
+            ? Colors.primary
+            : place.type === 'loud'
+              ? Colors.estimateText
+              : Colors.border;
+
+          return (
+            <Pressable
+              key={place.id}
+              onPress={() => onSelect(place)}
+              accessibilityRole="button"
+              accessibilityLabel={`${place.name}, ${typeLabel}`}
+              style={styles.nearbyPlaceRow}>
+              <IconSymbol name={icon} size={20} color={iconColor} />
+              <View style={styles.nearbyPlaceCopy}>
+                <ThemedText type="smallBold">{place.name}</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">{typeLabel}</ThemedText>
+              </View>
+              <IconSymbol name="chevron.right" size={16} color={Colors.textSecondary} />
+            </Pressable>
+          );
+        })}
+      </View>
+    </Card>
   );
 }
 
@@ -586,6 +735,38 @@ const styles = StyleSheet.create({
   },
   loudZoneSelected: {
     borderWidth: 3,
+  },
+  placeCluster: {
+    position: 'absolute',
+    width: 44,
+    height: 44,
+    marginLeft: -22,
+    marginTop: -22,
+    borderRadius: 22,
+    borderWidth: 3,
+    borderColor: Colors.surface,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  placeClusterCount: {
+    color: Colors.surface,
+  },
+  nearbyPlacesList: {
+    gap: Spacing.one,
+  },
+  nearbyPlaceRow: {
+    minHeight: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    borderTopWidth: 1,
+    borderTopColor: Colors.neutralFillAlt,
+    paddingVertical: Spacing.two,
+  },
+  nearbyPlaceCopy: {
+    flex: 1,
+    gap: Spacing.half,
   },
   legend: {
     flexDirection: 'row',

@@ -67,7 +67,7 @@ export function recommendPostSecurityOptions(
   flight: FlightLookup,
   now: Date,
 ): Itinerary['postSecurity'] {
-  const gateAreaId = airport.gateAreas[flight.gate];
+  const gateAreaId = flight.gate ? airport.gateAreas[flight.gate] : undefined;
   const gateCenter = gateAreaId ? airport.areaCenters[gateAreaId] : YOU_POSITION;
 
   const departure = new Date(flight.scheduledDeparture);

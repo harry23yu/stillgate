@@ -56,7 +56,7 @@ export default function GateChangeScreen() {
     };
   }, [flightNumber, date]);
 
-  if (!airport || !before || !after) {
+  if (!airport || !before || !after || !before.gate || !after.gate) {
     return <ThemedView style={styles.container} />;
   }
 

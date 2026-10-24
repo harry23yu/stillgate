@@ -6,6 +6,7 @@ export const FLIGHT_STATUS_LABEL: Record<FlightStatus, string> = {
   boarding: 'Boarding',
   'gate-changed': 'Gate changed',
   cancelled: 'Cancelled',
+  unknown: 'Status unknown',
 };
 
 

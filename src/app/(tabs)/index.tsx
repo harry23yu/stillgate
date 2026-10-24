@@ -10,14 +10,15 @@ import { Pill } from '@/components/pill';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Spacing } from '@/constants/theme';
-import { getFlightStatus } from '@/data/client';
+import { getFlightStatus, getSupportedAirportCode } from '@/data/client';
 import { getSavedFlight } from '@/data/saved-flight';
-import type { AirportCode, FlightLookup } from '@/data/types';
+import type { FlightLookup } from '@/data/types';
 import { FLIGHT_STATUS_LABEL, formatDateHeader, formatTime } from '@/lib/format';
 
 export default function HomeScreen() {
   const [flight, setFlight] = useState<FlightLookup | null>(null);
-  const airportCode: AirportCode = flight?.origin.code === 'CHS' ? 'CHS' : 'SFO';
+  const airportCode = getSupportedAirportCode(flight?.origin.code ?? 'SFO');
+  const airportLabel = flight?.origin.code ?? 'SFO';
   const [flightDate, setFlightDate] = useState<string | null>(null);
   const [unmatchedFlightNumber, setUnmatchedFlightNumber] = useState<string | null>(null);
 
@@ -30,7 +31,7 @@ export default function HomeScreen() {
           setUnmatchedFlightNumber(null);
           return;
         }
-        const result = await getFlightStatus(saved.flightNumber, saved.date);
+        const result = saved.lookup ?? await getFlightStatus(saved.flightNumber, saved.date, saved.originCode);
         if (result) {
           setFlight(result);
           setFlightDate(saved.date);
@@ -78,7 +79,7 @@ export default function HomeScreen() {
                   <ThemedText type="smallBold">{flight.flight}</ThemedText>
                   <IconSymbol name="pencil" size={13} color={Colors.primary} />
                 </Pressable>
-                <Pill variant={flight.status === 'gate-changed' ? 'estimate' : 'success'}>
+                <Pill variant={flight.status === 'unknown' ? 'neutral' : flight.status === 'gate-changed' ? 'estimate' : 'success'}>
                   {FLIGHT_STATUS_LABEL[flight.status]}
                 </Pill>
               </View>
@@ -92,9 +93,9 @@ export default function HomeScreen() {
                 </View>
                 <IconSymbol name="airplane" size={18} color={Colors.border} />
                 <View style={[styles.routeEndpoint, styles.routeEndpointRight]}>
-                  <ThemedText type="subtitle">{flight.destination.code}</ThemedText>
+                  <ThemedText type="subtitle">{flight.destination?.code ?? '—'}</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
-                    {flight.destination.city}
+                    {flight.destination?.city ?? 'Destination not available'}
                   </ThemedText>
                 </View>
               </View>
@@ -103,11 +104,12 @@ export default function HomeScreen() {
 
               <View style={styles.rowBetween}>
                 <Stat label="Boards" value={formatTime(flight.scheduledDeparture)} />
-                <Stat label="Gate" value={flight.gate} />
-                <Stat label="Terminal" value={flight.terminal} />
+                <Stat label="Gate" value={flight.gate ?? 'Not posted'} />
+                <Stat label="Terminal" value={flight.terminal ?? 'Not posted'} />
               </View>
 
-              <Pressable
+              {flight.gate && (
+                <Pressable
                 onPress={() =>
                   router.push({
                     pathname: '/gate-change',
@@ -124,7 +126,8 @@ export default function HomeScreen() {
                 <ThemedText type="small" themeColor="textSecondary">
                   LIVE DEMO
                 </ThemedText>
-              </Pressable>
+                </Pressable>
+              )}
             </Card>
           ) : (
             <Card>
@@ -169,16 +172,16 @@ export default function HomeScreen() {
 
           <View style={styles.sectionHeader}>
             <View>
-              <ThemedText type="subtitle">Explore {airportCode}</ThemedText>
+              <ThemedText type="subtitle">Explore {airportLabel}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                {airportCode === 'CHS' ? 'Whole-airport overview · sample pins' : 'A full airport overview with calm spots'}
+                {airportCode === 'CHS' ? 'Whole-airport overview · sample pins' : airportCode === 'SFO' ? 'A full airport overview with calm spots' : 'Flight found · detailed map not available yet'}
               </ThemedText>
             </View>
             <Pressable onPress={() => router.push('/map')} accessibilityRole="button" hitSlop={8}>
               <ThemedText type="smallBold" themeColor="primary">Open map</ThemedText>
             </Pressable>
           </View>
-          <Pressable
+          {airportCode ? <Pressable
             onPress={() => router.push('/map')}
             accessibilityRole="button"
             accessibilityLabel={`Preview of the ${airportCode} airport map. Open map`}
@@ -192,7 +195,14 @@ export default function HomeScreen() {
               accessible={false}
             />
             <View style={styles.mapBadge}><IconSymbol name="location.fill" size={12} color={Colors.surface} /><ThemedText type="smallBold" style={styles.mapBadgeText}>Whole airport</ThemedText></View>
-          </Pressable>
+          </Pressable> : (
+            <Card>
+              <ThemedText type="smallBold">We don’t have a {airportLabel} map yet</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                Your flight details are saved. Map and gate guidance will appear here when this airport is supported.
+              </ThemedText>
+            </Card>
+          )}
         </ScrollView>
       </SafeAreaView>
     </ThemedView>

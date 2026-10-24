@@ -20,6 +20,7 @@ function toLocalIsoWithOffset(date: Date): string {
 
 const sfoDemoDeparture = nextDemoDeparture(22, 40);
 const chsDemoDeparture = nextDemoDeparture(5, 30);
+const dcaDemoDeparture = nextDemoDeparture(13, 15);
 
 /** Sample SFO-to-Singapore flight used by the dashboard and gate-change demo. */
 export const sampleFlight: FlightLookup = {
@@ -36,7 +37,7 @@ export const sampleFlight: FlightLookup = {
 
 /** Charleston-to-Atlanta sample. The gate is demo data, not a live assignment. */
 export const sampleChsFlight: FlightLookup = {
-  flight: 'DL 3055',
+  flight: 'DL 2850',
   status: 'on-time',
   scheduledDeparture: toLocalIsoWithOffset(chsDemoDeparture),
   gate: 'A3',
@@ -45,6 +46,19 @@ export const sampleChsFlight: FlightLookup = {
   isRecorded: true,
   origin: { code: 'CHS', city: 'Charleston' },
   destination: { code: 'ATL', city: 'Atlanta' },
+};
+
+/** Flight-entry example supplied by the user; its destination/gate are intentionally unknown. */
+export const sampleDcaFlight: FlightLookup = {
+  flight: 'AA 1623',
+  status: 'unknown',
+  scheduledDeparture: toLocalIsoWithOffset(dcaDemoDeparture),
+  gate: null,
+  terminal: null,
+  retrievedAt: new Date().toISOString(),
+  isRecorded: true,
+  origin: { code: 'DCA', city: 'Washington, D.C.' },
+  destination: null,
 };
 
 /** What the flight looks like after the simulated gate change. */

@@ -46,7 +46,7 @@ export interface Airport {
   checkpointLanes: CheckpointWait[];
 }
 
-export type FlightStatus = 'on-time' | 'delayed' | 'boarding' | 'gate-changed' | 'cancelled';
+export type FlightStatus = 'on-time' | 'delayed' | 'boarding' | 'gate-changed' | 'cancelled' | 'unknown';
 
 export interface AirportRef {
   code: string;
@@ -57,17 +57,13 @@ export interface FlightLookup {
   flight: string;
   status: FlightStatus;
   scheduledDeparture: string;
-  gate: string;
-  terminal: string;
+  gate: string | null;
+  terminal: string | null;
   retrievedAt: string;
+  /** True for local demonstration data; backend results will set this false. */
   isRecorded: boolean;
-  /**
-   * Not in the real SFO API's documented fields (CLAUDE.md §11) — a
-   * front-end convenience for the dashboard route display. Confirm with the
-   * backend teammate before wiring to the real lookup.
-   */
   origin: AirportRef;
-  destination: AirportRef;
+  destination: AirportRef | null;
 }
 
 export interface CheckpointWait {

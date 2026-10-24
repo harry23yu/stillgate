@@ -10,21 +10,25 @@ type ButtonProps = {
   onPress: () => void;
   variant?: ButtonVariant;
   accessibilityHint?: string;
+  disabled?: boolean;
   style?: StyleProp<ViewStyle>;
 };
 
-export function Button({ label, onPress, variant = 'primary', accessibilityHint, style }: ButtonProps) {
+export function Button({ label, onPress, variant = 'primary', accessibilityHint, disabled = false, style }: ButtonProps) {
   return (
     <Pressable
       onPress={onPress}
+      disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled }}
       hitSlop={8}
       style={({ pressed }) => [
         styles.base,
         variantStyles[variant],
         pressed && styles.pressed,
+        disabled && styles.disabled,
         style,
       ]}>
       <ThemedText
@@ -47,6 +51,9 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.8,
+  },
+  disabled: {
+    opacity: 0.55,
   },
   primaryLabel: {
     color: Colors.surface,
