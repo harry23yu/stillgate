@@ -3,7 +3,7 @@
  * API response formats. See CLAUDE.md §5.
  */
 
-export type PlaceType = 'quiet' | 'loud' | 'service';
+export type PlaceType = 'quiet' | 'loud' | 'service' | 'food';
 
 export type Confidence = 'low' | 'medium' | 'high';
 
@@ -50,6 +50,8 @@ export interface Airport {
   gateAreas: Record<string, string>;
   /** Boarding area id -> approximate schematic position, used to find the nearest quiet spot. */
   areaCenters: Record<string, { x: number; y: number }>;
+  /** Security checkpoint lanes with live wait estimates, used by the arrival-time and checkpoint rules. */
+  checkpointLanes: CheckpointWait[];
   steps: Step[];
 }
 

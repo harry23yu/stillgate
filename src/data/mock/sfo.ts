@@ -98,6 +98,19 @@ export const sfoAirport: Airport = {
       lastVerified: '2026-10-01',
       source: 'estimate',
     },
+    {
+      id: 'grab-and-go-c5',
+      type: 'food',
+      name: 'Grab-and-go kiosk near Gate C5',
+      terminal: 't1',
+      x: 0.64,
+      y: 0.42,
+      hours: '5:00 AM – 9:00 PM',
+      notes: 'Prepackaged snacks, sandwiches and drinks. Estimate, not field-verified.',
+      confidence: 'low',
+      lastVerified: '2026-10-01',
+      source: 'estimate',
+    },
   ],
   gateAreas: {
     C1: 'area-c',
@@ -113,6 +126,20 @@ export const sfoAirport: Airport = {
   areaCenters: {
     'area-c': { x: 0.74, y: 0.36 },
   },
+  checkpointLanes: [
+    {
+      checkpoint: 'Checkpoint B — General',
+      waitMinutes: 18,
+      queueStatus: 'moderate',
+      retrievedAt: '2026-10-23T07:00:00-07:00',
+    },
+    {
+      checkpoint: 'Checkpoint B — PreCheck/CLEAR',
+      waitMinutes: 6,
+      queueStatus: 'low',
+      retrievedAt: '2026-10-23T07:00:00-07:00',
+    },
+  ],
   steps: [
     {
       id: 'checkin-1',
