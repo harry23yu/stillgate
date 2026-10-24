@@ -4,7 +4,9 @@
   "description": "Sensory-aware airport travel app for neurodivergent and sensory-sensitive travelers.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "schema": "ts-json-schema-generator -p shared/schema.ts -t Airport -o shared/airport.schema.json",
+    "validate": "ajv validate -s shared/airport.schema.json -d \"shared/data/*.json\""
   },
   "repository": {
     "type": "git",
@@ -19,6 +21,8 @@
   },
   "homepage": "https://github.com/harry23yu/stillgate#readme",
   "devDependencies": {
+    "ajv-cli": "^5.0.0",
+    "ts-json-schema-generator": "^2.9.0",
     "typescript": "^7.0.2"
   }
 }
