@@ -1,0 +1,39 @@
+{
+  "code": "SFO",
+  "name": "San Francisco International Airport",
+  "terminals": [
+    { "id": "T1", "name": "Harvey Milk Terminal 1", "gates": ["C2"] }
+  ],
+  "lastVerified": null,
+  "verifiedStatus": "basic",
+  "quietSpots": [
+    {
+      "id": "sfo-sensory-room-t1",
+      "kind": "sensory_room",
+      "name": "SFO Sensory Room",
+      "location": {
+        "terminalId": "T1",
+        "nearGate": "C2",
+        "postSecurity": true,
+        "description": "Harvey Milk Terminal 1, post-security, near Gate C2"
+      },
+      "hours": "5:00 a.m. to 11:00 p.m.",
+      "notes": "Quiet area, active area, and a full-scale aircraft cabin.",
+      "verifiedDate": null,
+      "source": {
+        "label": "SFO Sensory Room (via project brief; page not re-checked)",
+        "url": "https://fly.sfo.gov/node/15591"
+      }
+    }
+  ],
+  "loudZones": [],
+  "services": [],
+  "walkthrough": [],
+  "links": [
+    {
+      "label": "TSA Cares (call at least 72 hours before travel)",
+      "url": "https://www.tsa.gov/travel/passenger-support",
+      "provider": "tsa"
+    }
+  ]
+}

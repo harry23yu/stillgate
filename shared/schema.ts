@@ -13,7 +13,7 @@ export interface Airport {
   code: string; // IATA, e.g. "SFO"
   name: string;
   terminals: Terminal[];
-  lastVerified: string;
+  lastVerified: string | null; // null = never verified by a human
   verifiedStatus: VerifiedStatus; // "basic" = basic info only tier
   quietSpots: QuietSpot[];
   loudZones: LoudZone[];
@@ -46,7 +46,7 @@ export interface QuietSpot {
   location: Location;
   hours?: string; // free text, e.g. "5:00 a.m. to 11:00 p.m."
   notes?: string;
-  verifiedDate: string;
+  verifiedDate: string | null; // null = never verified by a human
   source: Source;
 }
 
@@ -82,7 +82,7 @@ export interface Service {
   location: Location;
   hours?: string;
   notes?: string;
-  verifiedDate: string;
+  verifiedDate: string | null; // null = never verified by a human
   source: Source;
 }
 
@@ -95,7 +95,7 @@ export interface WalkthroughStep {
   // Extra detail shown only when the profile's detailLevel is "detailed" (first-time flyers).
   detailedText?: string;
   photoUrl?: string;
-  verifiedDate: string;
+  verifiedDate: string | null; // null = never verified by a human
   source: Source;
 }
 
