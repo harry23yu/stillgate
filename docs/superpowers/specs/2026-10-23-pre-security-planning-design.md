@@ -143,6 +143,8 @@ two.
 base = tripDetails.isInternational ? 180 : 120      // minutes before departure
 + 30  if tripDetails.checkingBag
 − 15  if tripDetails.hasPreCheck
+− 10  if tripDetails.hasBoardingPass                  // added during plan self-review — this
+                                                       // field was otherwise collected and unused
 + 20  if profile.firstFlight                          // detailLevel === 'detailed'
 + recommendedCheckpoint.waitMinutes                    // 0 if lane data missing
 = bufferMinutes
