@@ -1,6 +1,6 @@
 import { sampleFlight, sampleFlightAfterGateChange } from '@/data/mock/flight';
 import { sfoAirport } from '@/data/mock/sfo';
-import type { Airport, FlightLookup, Place, Step, StepPhase } from '@/data/types';
+import type { Airport, FlightLookup, Place, PlaceType, Step, StepPhase } from '@/data/types';
 
 /**
  * Single module boundary for airport/flight data. Every call here currently
@@ -28,21 +28,26 @@ export function estimateWalkMinutes(
 }
 
 /**
- * The quiet-spot rule from CLAUDE.md §4: filter places down to quiet spots,
- * then pick the one nearest the new gate's boarding area. No model decides
+ * The nearest-place rule from CLAUDE.md §4: filter places down to one type,
+ * then pick the one nearest the gate's boarding area. No model decides
  * this — it is a plain nearest-neighbor lookup over the gate-to-area table.
  */
-export function getNearestQuietPlace(airport: Airport, gate: string): Place | null {
-  const quietPlaces = airport.places.filter((place) => place.type === 'quiet');
-  if (quietPlaces.length === 0) return null;
+export function getNearestPlace(airport: Airport, gate: string, type: PlaceType): Place | null {
+  const matches = airport.places.filter((place) => place.type === type);
+  if (matches.length === 0) return null;
 
   const areaId = airport.gateAreas[gate];
   const center = areaId ? airport.areaCenters[areaId] : undefined;
-  if (!center) return quietPlaces[0];
+  if (!center) return matches[0];
 
-  return quietPlaces.reduce((nearest, place) =>
+  return matches.reduce((nearest, place) =>
     estimateWalkMinutes(center, place) < estimateWalkMinutes(center, nearest) ? place : nearest,
   );
+}
+
+/** Thin wrapper kept for existing call sites (Map, Gate Change). */
+export function getNearestQuietPlace(airport: Airport, gate: string): Place | null {
+  return getNearestPlace(airport, gate, 'quiet');
 }
 
 export async function getAirport(code: string): Promise<Airport | null> {

@@ -18,17 +18,20 @@ const FILTERS: { type: PlaceType; label: string }[] = [
   { type: 'quiet', label: 'Quiet spots' },
   { type: 'loud', label: 'Loud areas' },
   { type: 'service', label: 'Services' },
+  { type: 'food', label: 'Food' },
 ];
 
-const PIN_ICON: Record<'quiet' | 'service', 'moon.zzz.fill' | 'info.circle.fill'> = {
+const PIN_ICON: Record<'quiet' | 'service' | 'food', 'moon.zzz.fill' | 'info.circle.fill' | 'fork.knife'> = {
   quiet: 'moon.zzz.fill',
   service: 'info.circle.fill',
+  food: 'fork.knife',
 };
 
 const TYPE_LABEL: Record<PlaceType, string> = {
   quiet: 'Quiet spot',
   loud: 'Typically busy (estimate)',
   service: 'Service',
+  food: 'Food',
 };
 
 export default function MapScreen() {
@@ -38,6 +41,7 @@ export default function MapScreen() {
     quiet: true,
     loud: true,
     service: true,
+    food: true,
   });
   const [selectedId, setSelectedId] = useState<string | null>(focus ?? null);
   const [highlightedId, setHighlightedId] = useState<string | null>(focus ?? null);
