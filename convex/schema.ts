@@ -106,4 +106,14 @@ export const airportFields = {
 // SensoryProfile is intentionally not a table: it stays on-device.
 export default defineSchema({
   airports: defineTable(airportFields).index("by_code", ["code"]),
+  // "Was this accurate?" reports from travelers. One row per report, newest by _creationTime.
+  // Reports are signals for a human to re-verify; they never change an airport record by themselves.
+  reports: defineTable({
+    airportCode: v.string(),
+    spotId: v.string(), // id of a quiet spot, loud zone or service in that airport's record
+    verdict: v.union(v.literal("accurate"), v.literal("wrong")),
+    note: v.optional(v.string()),
+  })
+    .index("by_airportCode", ["airportCode"])
+    .index("by_airportCode_and_spotId", ["airportCode", "spotId"]),
 });

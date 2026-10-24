@@ -12,6 +12,7 @@ import type * as airports from "../airports.js";
 import type * as gateChange from "../gateChange.js";
 import type * as http from "../http.js";
 import type * as phrase from "../phrase.js";
+import type * as reports from "../reports.js";
 
 import type {
   ApiFromModules,
@@ -24,6 +25,7 @@ declare const fullApi: ApiFromModules<{
   gateChange: typeof gateChange;
   http: typeof http;
   phrase: typeof phrase;
+  reports: typeof reports;
 }>;
 
 /**

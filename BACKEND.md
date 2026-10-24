@@ -99,6 +99,23 @@ to 300 characters) and `detailLevel` (`brief`, `standard` or `detailed`). Return
 - Needs `ANTHROPIC_API_KEY` on the deployment (`npx convex env set ANTHROPIC_API_KEY <key>`).
 - Public and unauthenticated, so anyone with the URL can spend credits. Fine for the event; add rate limiting before launch.
 
+### Reports ("Was this accurate?")
+
+```bash
+npx convex run reports:submitReport '{"airportCode":"SFO","spotId":"sfo-sensory-room-t1","verdict":"wrong","note":"Room was closed for cleaning"}'
+npx convex run reports:listRecentReports '{"airportCode":"SFO","spotId":"sfo-sensory-room-t1","limit":5}'
+npx convex run reports:spotReportSummary '{"airportCode":"SFO","spotId":"sfo-sensory-room-t1"}'
+```
+
+- `reports:submitReport` (mutation): `verdict` is `"accurate"` or `"wrong"`; `note` is optional, max 280 characters.
+  `spotId` must be the id of a quiet spot, loud zone or service in that airport's record. Unknown airport or
+  spot, an over-long note, or a bad verdict is rejected and nothing is written.
+- `reports:listRecentReports` (query): newest first. `spotId` is optional; `limit` defaults to 20, max 50.
+  It is live: a client subscribed to it updates when a report arrives.
+- `reports:spotReportSummary` (query): `{accurate, wrong, total, truncated}` from the 200 most recent reports for the spot.
+- Reports never change an airport record. They are signals for a person to re-verify the pin.
+- Unauthenticated, so anyone can submit and nothing limits one person's volume. Fine for the event; add rate limiting and moderation before launch.
+
 ## Importing airport data (for the Apify Actor)
 
 ```
