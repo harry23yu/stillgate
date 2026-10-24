@@ -10,22 +10,20 @@ import { Pill } from '@/components/pill';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Spacing } from '@/constants/theme';
-import { getAirport, getFlightStatus, getSteps } from '@/data/client';
+import { getAirport, getFlightStatus } from '@/data/client';
 import { getSavedFlight } from '@/data/saved-flight';
-import type { Airport, FlightLookup, Place, Step } from '@/data/types';
-import { FLIGHT_STATUS_LABEL, formatDateHeader, formatTime, STEP_PHASE_LABEL } from '@/lib/format';
+import type { Airport, FlightLookup, Place } from '@/data/types';
+import { FLIGHT_STATUS_LABEL, formatDateHeader, formatTime } from '@/lib/format';
 
 export default function HomeScreen() {
   const [airport, setAirport] = useState<Airport | null>(null);
   const [flight, setFlight] = useState<FlightLookup | null>(null);
   const [flightDate, setFlightDate] = useState<string | null>(null);
   const [unmatchedFlightNumber, setUnmatchedFlightNumber] = useState<string | null>(null);
-  const [steps, setSteps] = useState<Step[]>([]);
 
   useFocusEffect(
     useCallback(() => {
       getAirport('SFO').then(setAirport);
-      getSteps('SFO', 'security').then(setSteps);
       getSavedFlight().then(async (saved) => {
         if (!saved) {
           setFlight(null);
@@ -48,7 +46,6 @@ export default function HomeScreen() {
   );
 
   const quietPlaces = airport?.places.filter((place) => place.type === 'quiet') ?? [];
-  const nextStep = steps[0];
 
   return (
     <ThemedView style={styles.container}>
@@ -156,45 +153,17 @@ export default function HomeScreen() {
             </Card>
           )}
 
-          <View style={styles.sectionHeader}>
-            <ThemedText type="eyebrow" themeColor="textSecondary">
-              Your next step
+          <Card>
+            <View style={styles.rowCenter}>
+              <IconSymbol name="waveform" size={16} color={Colors.primary} />
+              <ThemedText type="smallBold">Plan your trip</ThemedText>
+            </View>
+            <ThemedText themeColor="textSecondary">
+              Answer a few quick questions and Calm Guide will build your personalized steps —
+              when to leave, which checkpoint to use, and what to do after security.
             </ThemedText>
-            {steps.length > 0 && <Pill>{`1 of ${steps.length}`}</Pill>}
-          </View>
-
-          {nextStep && (
-            <>
-              <ThemedText type="subtitle">{STEP_PHASE_LABEL[nextStep.phase]}</ThemedText>
-              <Card style={styles.stepRow}>
-                <View style={styles.stepIcon}>
-                  <IconSymbol name="arrow.right" size={18} color={Colors.surface} />
-                </View>
-                <View style={styles.stepText}>
-                  <ThemedText type="smallBold">{nextStep.text}</ThemedText>
-                </View>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Listen to this step"
-                  onPress={() => router.push('/calm-guide')}
-                  hitSlop={8}
-                  style={styles.playButton}>
-                  <IconSymbol name="play.fill" size={16} color={Colors.surface} />
-                </Pressable>
-              </Card>
-            </>
-          )}
-
-          <Button label="Start guidance" onPress={() => router.push('/calm-guide')} />
-          <Pressable
-            onPress={() => router.push('/calm-guide')}
-            accessibilityRole="button"
-            accessibilityLabel="Show step-by-step details"
-            style={styles.linkButton}>
-            <ThemedText type="smallBold" themeColor="primary">
-              Show step-by-step details
-            </ThemedText>
-          </Pressable>
+            <Button label="Start guidance" onPress={() => router.push('/calm-guide')} />
+          </Card>
 
           <View style={styles.sectionHeader}>
             <View>
@@ -316,35 +285,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: Spacing.two,
-  },
-  stepRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
-  },
-  stepIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepText: {
-    flex: 1,
-  },
-  playButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: Colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  linkButton: {
-    alignSelf: 'center',
-    minHeight: 44,
-    justifyContent: 'center',
   },
   mapPreview: {
     height: 160,
