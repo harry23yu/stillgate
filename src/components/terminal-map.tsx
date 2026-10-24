@@ -1,5 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  type LayoutChangeEvent,
+  type ScrollViewInstance,
+} from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
@@ -17,6 +25,15 @@ const FILTERS: { type: PlaceType; label: string }[] = [
   { type: 'loud', label: 'Loud areas' },
   { type: 'service', label: 'Services' },
   { type: 'food', label: 'Food' },
+];
+
+// Hub x-coordinates are in the schematic's 4050-wide viewBox; jumpTo() scales
+// them to the measured on-screen canvas width before scrolling.
+const JUMP_TARGETS: { label: string; hubX: number }[] = [
+  { label: 'Terminal 1', hubX: 160 },
+  { label: 'Terminal 2', hubX: 1060 },
+  { label: 'Terminal 3', hubX: 1960 },
+  { label: 'International', hubX: 2860 }, // Area G hub, first Intl cluster in loop order
 ];
 
 const PIN_ICON: Record<'quiet' | 'service' | 'food', 'moon.zzz.fill' | 'info.circle.fill' | 'fork.knife'> = {
@@ -51,6 +68,9 @@ export function TerminalMap({ focusPlaceId }: TerminalMapProps) {
   });
   const [selectedId, setSelectedId] = useState<string | null>(focusPlaceId ?? null);
   const [highlightedId, setHighlightedId] = useState<string | null>(focusPlaceId ?? null);
+  const scrollRef = useRef<ScrollViewInstance>(null);
+  const [canvasWidth, setCanvasWidth] = useState(0);
+  const [viewportWidth, setViewportWidth] = useState(0);
 
   useEffect(() => {
     getAirport('SFO').then(setAirport);
@@ -84,6 +104,20 @@ export function TerminalMap({ focusPlaceId }: TerminalMapProps) {
     );
   }
 
+  function jumpTo(hubX: number) {
+    const scale = canvasWidth / 4050;
+    const target = Math.max(0, Math.min(hubX * scale - viewportWidth / 2, canvasWidth - viewportWidth));
+    scrollRef.current?.scrollTo({ x: target, animated: true });
+  }
+
+  function handleCanvasLayout(event: LayoutChangeEvent) {
+    setCanvasWidth(event.nativeEvent.layout.width);
+  }
+
+  function handleScrollViewportLayout(event: LayoutChangeEvent) {
+    setViewportWidth(event.nativeEvent.layout.width);
+  }
+
   const pins = airport.places.filter((place) => place.type !== 'loud' && activeFilters[place.type]);
   const loudZones = airport.places.filter((place) => place.type === 'loud' && activeFilters.loud);
 
@@ -100,9 +134,26 @@ export function TerminalMap({ focusPlaceId }: TerminalMapProps) {
         ))}
       </View>
 
+      <View style={styles.chipRow}>
+        {JUMP_TARGETS.map((target) => (
+          <Chip
+            key={target.label}
+            label={target.label}
+            selected={false}
+            onPress={() => jumpTo(target.hubX)}
+            accessibilityLabel={`Jump to ${target.label}`}
+          />
+        ))}
+      </View>
+
       <View style={styles.schematicWrapper}>
-        <ScrollView horizontal showsHorizontalScrollIndicator style={styles.schematicScroll}>
-          <View style={styles.schematicCanvas}>
+        <ScrollView
+          ref={scrollRef}
+          horizontal
+          showsHorizontalScrollIndicator
+          style={styles.schematicScroll}
+          onLayout={handleScrollViewportLayout}>
+          <View style={styles.schematicCanvas} onLayout={handleCanvasLayout}>
             <TerminalSchematic />
 
             {loudZones.map((place) => (
