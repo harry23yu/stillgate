@@ -30,15 +30,6 @@ export interface Terminal {
   boardingAreas: string[];
 }
 
-export type StepPhase = 'check-in' | 'security' | 'boarding' | 'gate-change';
-
-export interface Step {
-  id: string;
-  phase: StepPhase;
-  text: string;
-  audioUrl: string | null;
-}
-
 export interface Airport {
   code: string;
   name: string;
@@ -52,7 +43,6 @@ export interface Airport {
   areaCenters: Record<string, { x: number; y: number }>;
   /** Security checkpoint lanes with live wait estimates, used by the arrival-time and checkpoint rules. */
   checkpointLanes: CheckpointWait[];
-  steps: Step[];
 }
 
 export type FlightStatus = 'on-time' | 'delayed' | 'boarding' | 'gate-changed' | 'cancelled';

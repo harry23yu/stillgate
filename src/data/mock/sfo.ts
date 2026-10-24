@@ -140,30 +140,4 @@ export const sfoAirport: Airport = {
       retrievedAt: '2026-10-23T07:00:00-07:00',
     },
   ],
-  steps: [
-    {
-      id: 'checkin-1',
-      phase: 'check-in',
-      text: 'Check your bag or head straight to security if you already have your boarding pass.',
-      audioUrl: null,
-    },
-    {
-      id: 'security-1',
-      phase: 'security',
-      text: 'Walk to Checkpoint B. It is typically a moderate wait with moderate noise.',
-      audioUrl: null,
-    },
-    {
-      id: 'boarding-1',
-      phase: 'boarding',
-      text: 'Head to your gate. Boarding usually starts about 30 to 45 minutes before departure.',
-      audioUrl: null,
-    },
-    {
-      id: 'gate-change-1',
-      phase: 'gate-change',
-      text: 'Your gate has changed. Take a moment, then head to the new gate when you are ready.',
-      audioUrl: null,
-    },
-  ],
 };

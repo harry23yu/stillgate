@@ -1,4 +1,4 @@
-import type { FlightStatus, StepPhase } from '@/data/types';
+import type { FlightStatus } from '@/data/types';
 
 export const FLIGHT_STATUS_LABEL: Record<FlightStatus, string> = {
   'on-time': 'On time',
@@ -8,12 +8,6 @@ export const FLIGHT_STATUS_LABEL: Record<FlightStatus, string> = {
   cancelled: 'Cancelled',
 };
 
-export const STEP_PHASE_LABEL: Record<StepPhase, string> = {
-  'check-in': 'Check in',
-  security: 'Go through security',
-  boarding: 'Head to your gate',
-  'gate-change': 'Handle the gate change',
-};
 
 export function formatDateHeader(date: Date): string {
   return new Intl.DateTimeFormat('en-US', {

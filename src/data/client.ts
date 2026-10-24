@@ -1,6 +1,6 @@
 import { sampleFlight, sampleFlightAfterGateChange } from '@/data/mock/flight';
 import { sfoAirport } from '@/data/mock/sfo';
-import type { Airport, FlightLookup, Place, PlaceType, Step, StepPhase } from '@/data/types';
+import type { Airport, FlightLookup, Place, PlaceType } from '@/data/types';
 
 /**
  * Single module boundary for airport/flight data. Every call here currently
@@ -72,7 +72,3 @@ function matchesFlight(flight: FlightLookup, flightNumber: string, date: string)
   return flight.flight === flightNumber && flight.scheduledDeparture.startsWith(date);
 }
 
-export async function getSteps(airportCode: string, phase: StepPhase): Promise<Step[]> {
-  const airport = await getAirport(airportCode);
-  return airport ? airport.steps.filter((step) => step.phase === phase) : [];
-}
