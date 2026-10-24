@@ -1,5 +1,5 @@
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -9,7 +9,8 @@ import { IconSymbol } from '@/components/icon-symbol';
 import { Pill } from '@/components/pill';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing, type Palette } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { getFlightStatus, getSupportedAirportCode } from '@/data/client';
 import { getSavedFlight } from '@/data/saved-flight';
 import type { FlightLookup } from '@/data/types';
@@ -21,6 +22,8 @@ export default function HomeScreen() {
   const airportLabel = flight?.origin.code ?? 'SFO';
   const [flightDate, setFlightDate] = useState<string | null>(null);
   const [unmatchedFlightNumber, setUnmatchedFlightNumber] = useState<string | null>(null);
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
 
   useFocusEffect(
     useCallback(() => {
@@ -57,12 +60,12 @@ export default function HomeScreen() {
               <ThemedText type="title">Good morning.</ThemedText>
             </View>
             <Pressable
-              onPress={() => router.push('/profile')}
+              onPress={() => router.push('/settings')}
               accessibilityRole="button"
-              accessibilityLabel="Open sensory profile"
+              accessibilityLabel="Open settings"
               hitSlop={8}
               style={styles.avatarButton}>
-              <IconSymbol name="gearshape.fill" size={20} color={Colors.primary} />
+              <IconSymbol name="gearshape.fill" size={20} color={theme.primary} />
             </Pressable>
           </View>
 
@@ -75,9 +78,9 @@ export default function HomeScreen() {
                   accessibilityLabel={`Edit or remove saved flight, currently ${flight.flight}`}
                   style={styles.rowCenter}
                   hitSlop={8}>
-                  <IconSymbol name="airplane" size={16} color={Colors.primary} />
+                  <IconSymbol name="airplane" size={16} color={theme.primary} />
                   <ThemedText type="smallBold">{flight.flight}</ThemedText>
-                  <IconSymbol name="pencil" size={13} color={Colors.primary} />
+                  <IconSymbol name="pencil" size={13} color={theme.primary} />
                 </Pressable>
                 <Pill variant={flight.status === 'unknown' ? 'neutral' : flight.status === 'gate-changed' ? 'estimate' : 'success'}>
                   {FLIGHT_STATUS_LABEL[flight.status]}
@@ -91,7 +94,7 @@ export default function HomeScreen() {
                     {flight.origin.city}
                   </ThemedText>
                 </View>
-                <IconSymbol name="airplane" size={18} color={Colors.border} />
+                <IconSymbol name="airplane" size={18} color={theme.border} />
                 <View style={[styles.routeEndpoint, styles.routeEndpointRight]}>
                   <ThemedText type="subtitle">{flight.destination?.code ?? '—'}</ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
@@ -120,7 +123,7 @@ export default function HomeScreen() {
                 accessibilityLabel="Simulate a gate change, live demo"
                 style={styles.simulateButton}>
                 <View style={styles.rowCenter}>
-                  <IconSymbol name="sparkles" size={16} color={Colors.text} />
+                  <IconSymbol name="sparkles" size={16} color={theme.text} />
                   <ThemedText type="smallBold">Simulate gate change</ThemedText>
                 </View>
                 <ThemedText type="small" themeColor="textSecondary">
@@ -161,12 +164,12 @@ export default function HomeScreen() {
           <Pressable onPress={() => router.push('/calm-guide')} accessibilityRole="button" style={styles.nextStep}>
             <View style={styles.progressTrack}><View style={styles.progressFill} /></View>
             <View style={styles.nextStepRow}>
-              <View style={styles.stepIcon}><IconSymbol name="checkmark" size={18} color={Colors.surface} /></View>
+              <View style={styles.stepIcon}><IconSymbol name="checkmark" size={18} color={theme.surface} /></View>
               <View style={styles.stepCopy}>
                 <ThemedText type="smallBold">Plan your airport steps</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">Set your timing and find a quieter route.</ThemedText>
               </View>
-              <IconSymbol name="chevron.right" size={16} color={Colors.primary} />
+              <IconSymbol name="chevron.right" size={16} color={theme.primary} />
             </View>
           </Pressable>
 
@@ -194,7 +197,7 @@ export default function HomeScreen() {
               style={styles.mapPreview}
               accessible={false}
             />
-            <View style={styles.mapBadge}><IconSymbol name="location.fill" size={12} color={Colors.surface} /><ThemedText type="smallBold" style={styles.mapBadgeText}>Whole airport</ThemedText></View>
+            <View style={styles.mapBadge}><IconSymbol name="location.fill" size={12} color={theme.surface} /><ThemedText type="smallBold" style={styles.mapBadgeText}>Whole airport</ThemedText></View>
           </Pressable> : (
             <Card>
               <ThemedText type="smallBold">We don’t have a {airportLabel} map yet</ThemedText>
@@ -220,7 +223,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -241,7 +244,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: c.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -268,13 +271,13 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.neutralFillAlt,
+    backgroundColor: c.neutralFillAlt,
   },
   simulateButton: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: Colors.neutralFillAlt,
+    backgroundColor: c.neutralFillAlt,
     borderRadius: 14,
     paddingHorizontal: Spacing.three,
     minHeight: 44,
@@ -288,19 +291,19 @@ const styles = StyleSheet.create({
   openMapButton: {
     height: 132,
     borderRadius: 20,
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: c.primaryLight,
     overflow: 'hidden',
     justifyContent: 'center',
   },
   mapPreview: { width: '100%', height: 110, alignSelf: 'center' },
-  mapBadge: { position: 'absolute', left: 12, bottom: 10, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: Colors.primary, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20 },
-  mapBadgeText: { color: Colors.surface },
+  mapBadge: { position: 'absolute', left: 12, bottom: 10, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: c.primary, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 20 },
+  mapBadgeText: { color: c.surface },
   openMapButtonPressed: { opacity: 0.85 },
   nextStepHeading: { gap: 3 },
-  nextStep: { backgroundColor: Colors.surface, borderRadius: 18, padding: Spacing.three, gap: Spacing.three, shadowColor: '#1F2A2E', shadowOpacity: 0.07, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
-  progressTrack: { height: 5, borderRadius: 3, backgroundColor: Colors.neutralFillAlt, overflow: 'hidden' },
-  progressFill: { height: '100%', width: '28%', backgroundColor: Colors.primary, borderRadius: 3 },
+  nextStep: { backgroundColor: c.surface, borderRadius: 18, padding: Spacing.three, gap: Spacing.three, shadowColor: '#1F2A2E', shadowOpacity: 0.07, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
+  progressTrack: { height: 5, borderRadius: 3, backgroundColor: c.neutralFillAlt, overflow: 'hidden' },
+  progressFill: { height: '100%', width: '28%', backgroundColor: c.primary, borderRadius: 3 },
   nextStepRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  stepIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: Colors.primary, alignItems: 'center', justifyContent: 'center' },
+  stepIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center' },
   stepCopy: { flex: 1, gap: 2 },
 });

@@ -1,7 +1,7 @@
 import type { StyleProp, ViewStyle } from 'react-native';
 import Svg, { Line, Rect, Text as SvgText } from 'react-native-svg';
 
-import { Colors } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 type TerminalSchematicProps = { style?: StyleProp<ViewStyle> };
 
@@ -84,6 +84,7 @@ function tForGateIndex(pier: Pier, i: number, gateCount: number) {
  * layer interactive pin markers on top inside the same canvas.
  */
 export function TerminalSchematic({ style }: TerminalSchematicProps) {
+  const theme = useTheme();
   const pierLines = PIERS.flatMap((pier) => [
     <Line
       key={`pier-border-${pier.id}`}
@@ -91,7 +92,7 @@ export function TerminalSchematic({ style }: TerminalSchematicProps) {
       y1={pier.from[1]}
       x2={pier.to[0]}
       y2={pier.to[1]}
-      stroke={Colors.border}
+      stroke={theme.border}
       strokeWidth={PIER_WIDTH + PIER_BORDER_WIDTH * 2}
       strokeLinecap="square"
     />,
@@ -101,7 +102,7 @@ export function TerminalSchematic({ style }: TerminalSchematicProps) {
       y1={pier.from[1]}
       x2={pier.to[0]}
       y2={pier.to[1]}
-      stroke={Colors.neutralFillAlt}
+      stroke={theme.neutralFillAlt}
       strokeWidth={PIER_WIDTH}
       strokeLinecap="square"
     />,
@@ -125,7 +126,7 @@ export function TerminalSchematic({ style }: TerminalSchematicProps) {
           y1={edgeY}
           x2={tickEndX}
           y2={tickEndY}
-          stroke={Colors.border}
+          stroke={theme.border}
           strokeWidth={2}
         />
       );
@@ -141,7 +142,7 @@ export function TerminalSchematic({ style }: TerminalSchematicProps) {
           y={tickEndY + ny * TICK_LABEL_GAP}
           textAnchor="middle"
           fontSize={18}
-          fill={Colors.text}
+          fill={theme.text}
         >
           {pier.gatePrefix}
           {gateNumber}
@@ -167,8 +168,8 @@ export function TerminalSchematic({ style }: TerminalSchematicProps) {
         y={195}
         width={3760 - 160}
         height={SPINE_HEIGHT}
-        fill={Colors.neutralFillAlt}
-        stroke={Colors.border}
+        fill={theme.neutralFillAlt}
+        stroke={theme.border}
         strokeWidth={2}
       />
 
@@ -183,19 +184,19 @@ export function TerminalSchematic({ style }: TerminalSchematicProps) {
           height={HUB_H}
           rx={HUB_RADIUS}
           ry={HUB_RADIUS}
-          fill={Colors.neutralFillAlt}
-          stroke={Colors.border}
+          fill={theme.neutralFillAlt}
+          stroke={theme.border}
           strokeWidth={2}
         />
       ))}
 
       {gateMarks}
 
-      <Line x1={3900} y1={90} x2={3950} y2={100} stroke={Colors.border} strokeWidth={2} strokeDasharray="6,6" />
-      <SvgText x={3955} y={95} textAnchor="start" fontSize={14} fill={Colors.text}>
+      <Line x1={3900} y1={90} x2={3950} y2={100} stroke={theme.border} strokeWidth={2} strokeDasharray="6,6" />
+      <SvgText x={3955} y={95} textAnchor="start" fontSize={14} fill={theme.text}>
         Walkway loops back
       </SvgText>
-      <SvgText x={3955} y={112} textAnchor="start" fontSize={14} fill={Colors.text}>
+      <SvgText x={3955} y={112} textAnchor="start" fontSize={14} fill={theme.text}>
         to Terminal 1
       </SvgText>
     </Svg>

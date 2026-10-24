@@ -7,9 +7,10 @@ import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 import { defaultProfile, getProfile, saveProfile } from '@/data/profile';
 import type { Profile } from '@/data/types';
+import { useTheme } from '@/hooks/use-theme';
 
 type SensitivityLevel = NonNullable<Profile['noise']>;
 
@@ -24,6 +25,7 @@ const HELP_OPTIONS = ['Headphones', 'Extra time', 'Quiet room', 'Written steps']
 export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile>(defaultProfile);
+  const theme = useTheme();
 
   useEffect(() => {
     getProfile().then((saved) => {
@@ -49,7 +51,7 @@ export default function ProfileScreen() {
   if (loading) {
     return (
       <ThemedView style={styles.loadingContainer}>
-        <ActivityIndicator color={Colors.primary} />
+        <ActivityIndicator color={theme.primary} />
       </ThemedView>
     );
   }

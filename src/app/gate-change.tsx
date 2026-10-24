@@ -9,7 +9,8 @@ import { IconSymbol } from '@/components/icon-symbol';
 import { Pill } from '@/components/pill';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import {
   estimateWalkMinutes,
   getAirport,
@@ -56,6 +57,8 @@ export default function GateChangeScreen() {
     };
   }, [flightNumber, date]);
 
+  const theme = useTheme();
+
   if (!airport || !before || !after || !before.gate || !after.gate) {
     return <ThemedView style={styles.container} />;
   }
@@ -86,7 +89,7 @@ export default function GateChangeScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <View style={styles.demoBadge}>
-            <IconSymbol name="sparkles" size={14} color={Colors.textSecondary} />
+            <IconSymbol name="sparkles" size={14} color={theme.textSecondary} />
             <ThemedText type="small" themeColor="textSecondary">
               Simulated demo: not a real flight
             </ThemedText>
@@ -108,12 +111,12 @@ export default function GateChangeScreen() {
 
           <Card>
             <View style={styles.rowCenter}>
-              <IconSymbol name="airplane" size={16} color={Colors.primary} />
+              <IconSymbol name="airplane" size={16} color={theme.primary} />
               <ThemedText type="smallBold">{after.flight}</ThemedText>
             </View>
             <View style={styles.gateRow}>
               <GateBlock label="Old gate" gate={before.gate} />
-              <IconSymbol name="arrow.right" size={20} color={Colors.border} />
+              <IconSymbol name="arrow.right" size={20} color={theme.border} />
               <GateBlock label="New gate" gate={after.gate} emphasized />
             </View>
             <ThemedText type="small" themeColor="textSecondary">
@@ -146,7 +149,7 @@ export default function GateChangeScreen() {
             <Switch
               value={gentleAlertsOnly}
               onValueChange={setGentleAlertsOnly}
-              trackColor={{ true: Colors.primary, false: Colors.neutralFill }}
+              trackColor={{ true: theme.primary, false: theme.neutralFill }}
               accessibilityLabel="Gentle alerts only"
             />
           </Card>
@@ -159,7 +162,7 @@ export default function GateChangeScreen() {
             <Button label="Not now" variant="ghost" onPress={() => router.back()} />
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: theme.neutralFillAlt }]} />
 
           <View>
             <ThemedText type="eyebrow" themeColor="textSecondary">
@@ -265,7 +268,6 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.neutralFillAlt,
     marginVertical: Spacing.one,
   },
   liveLookupNote: {

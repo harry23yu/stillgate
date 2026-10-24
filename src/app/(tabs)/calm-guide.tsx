@@ -10,7 +10,7 @@ import { IconSymbol } from '@/components/icon-symbol';
 import { Pill } from '@/components/pill';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 import { getAirport, getFlightStatus, getSupportedAirportCode } from '@/data/client';
 import { buildItinerary, type Itinerary } from '@/data/itinerary';
 import { buildGuideNarration } from '@/data/guide-narration';
@@ -20,6 +20,7 @@ import { defaultTripDetails, getTripDetails, saveTripDetails, type TripDetails }
 import type { Airport, FlightLookup, Place, Profile } from '@/data/types';
 import { formatTime } from '@/lib/format';
 import { useGuideAudio } from '@/hooks/use-guide-audio';
+import { useTheme } from '@/hooks/use-theme';
 
 const NEED_A_MINUTE_PHRASE =
   "I'm overwhelmed right now and need a quiet moment. Could you help me find a calm place nearby?";
@@ -35,6 +36,7 @@ export default function CalmGuideScreen() {
   const [stepIndex, setStepIndex] = useState(0);
   const [loadingTrip, setLoadingTrip] = useState(true);
   const audio = useGuideAudio();
+  const theme = useTheme();
 
   useEffect(() => {
     let active = true;
@@ -171,9 +173,9 @@ export default function CalmGuideScreen() {
             disabled={audio.state === 'loading'}
             accessibilityRole="button"
             accessibilityLabel={audio.state === 'playing' ? 'Pause guide audio' : 'Listen to this step with Cartesia'}
-            style={({ pressed }) => [styles.listenButton, pressed && styles.listenButtonPressed]}>
-            <IconSymbol name={audio.state === 'playing' ? 'pause.fill' : 'waveform'} size={32} color={Colors.surface} />
-            <ThemedText type="subtitle" style={styles.listenLabel}>
+            style={({ pressed }) => [styles.listenButton, { backgroundColor: theme.primary }, pressed && styles.listenButtonPressed]}>
+            <IconSymbol name={audio.state === 'playing' ? 'pause.fill' : 'waveform'} size={32} color={theme.surface} />
+            <ThemedText type="subtitle" style={{ color: theme.surface }}>
               {audio.state === 'loading'
                 ? 'Preparing audio…'
                 : audio.state === 'playing'
@@ -203,14 +205,14 @@ export default function CalmGuideScreen() {
             <Button label={isLast ? 'Done' : 'Next'} onPress={handleNext} style={styles.navButton} />
           </View>
 
-          <Card style={styles.needAMinuteCard}>
+          <Card style={[styles.needAMinuteCard, { backgroundColor: theme.estimateFill }]}>
             <View style={styles.rowCenter}>
-              <IconSymbol name="hand.raised.fill" size={18} color={Colors.estimateText} />
+              <IconSymbol name="hand.raised.fill" size={18} color={theme.estimateText} />
               <ThemedText type="smallBold" themeColor="textSecondary">
                 Need a minute?
               </ThemedText>
             </View>
-            <ThemedText type="subtitle" style={styles.needAMinutePhrase}>
+            <ThemedText type="subtitle" style={{ color: theme.estimateText }}>
               {NEED_A_MINUTE_PHRASE}
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary">
@@ -317,6 +319,7 @@ function CheckpointStep({ itinerary }: { itinerary: Itinerary }) {
 }
 
 function TsaReminderStep({ itinerary }: { itinerary: Itinerary }) {
+  const theme = useTheme();
   return (
     <View style={styles.stepBody}>
       <Card>
@@ -327,7 +330,7 @@ function TsaReminderStep({ itinerary }: { itinerary: Itinerary }) {
         </ThemedText>
       </Card>
       {itinerary.visaReminder && (
-        <Card style={styles.visaCard}>
+        <Card style={{ backgroundColor: theme.estimateFill }}>
           <ThemedText type="subtitle">International flight</ThemedText>
           <ThemedText>{itinerary.visaReminder.text}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
@@ -434,27 +437,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.two,
   },
-  visaCard: {
-    backgroundColor: Colors.estimateFill,
-  },
   listenButton: {
     minHeight: 120,
     borderRadius: 24,
-    backgroundColor: Colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.one,
   },
   listenButtonPressed: { opacity: 0.85 },
-  listenLabel: { color: Colors.surface },
   listenNote: { textAlign: 'center' },
   navRow: { flexDirection: 'row' },
   navGap: { width: Spacing.two },
   navButton: { flex: 1 },
   navButtonDisabled: { opacity: 0.4 },
   needAMinuteCard: {
-    backgroundColor: Colors.estimateFill,
     gap: Spacing.two,
   },
-  needAMinutePhrase: { color: Colors.estimateText },
 });

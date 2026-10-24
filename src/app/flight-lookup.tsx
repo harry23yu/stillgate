@@ -9,7 +9,8 @@ import { Pill } from '@/components/pill';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { getFlightStatus } from '@/data/client';
 import { lookupFlight, type FlightLookupResult } from '@/data/flight-provider';
 import { sampleChsFlight, sampleDcaFlight, sampleFlight } from '@/data/mock/flight';
@@ -33,6 +34,7 @@ export default function FlightLookupScreen() {
   const [error, setError] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
   const [hasSavedFlight, setHasSavedFlight] = useState(false);
+  const theme = useTheme();
 
   useEffect(() => {
     let active = true;
@@ -237,7 +239,7 @@ export default function FlightLookupScreen() {
               <ThemedText type="small" themeColor="textSecondary">{lookupResult.message}</ThemedText>
             </Card>
           )}
-          {error && <ThemedText type="small" themeColor="textSecondary" style={styles.error}>{error}</ThemedText>}
+          {error && <ThemedText type="small" themeColor="textSecondary" style={{ color: theme.estimateText }}>{error}</ThemedText>}
 
           <Button label={searching ? 'Checking…' : 'Find flight'} onPress={() => void handleSearch()} disabled={searching} />
           {lookupResult?.kind === 'found' && (
@@ -290,7 +292,6 @@ const styles = StyleSheet.create({
   intro: { maxWidth: 440 },
   form: { gap: Spacing.three },
   todayButton: { alignSelf: 'flex-end', minHeight: 44, justifyContent: 'center', paddingHorizontal: Spacing.one },
-  error: { color: Colors.estimateText },
   resultHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
 });
 

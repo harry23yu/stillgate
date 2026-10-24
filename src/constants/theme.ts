@@ -22,7 +22,31 @@ export const Colors = {
   youMarker: '#1D4FA8',
 } as const;
 
+/**
+ * Low-light palette, same keys as Colors. Candidate values — verify ≥ 4.5:1
+ * body-text contrast on device and tune. See
+ * docs/superpowers/specs/2026-10-24-settings-design.md §7.1.
+ */
+export const ColorsDark = {
+  background: '#14191B',
+  surface: '#1E2528',
+  text: '#F2EFE8',
+  textSecondary: '#C3CCCE',
+  primary: '#6FB8A8',
+  primaryLight: '#24413B',
+  border: '#8A8475',
+  neutralFill: '#2A3134',
+  neutralFillAlt: '#232A2D',
+  estimateFill: '#4A2E14',
+  estimateText: '#F2C79A',
+  estimateBorder: '#E08A3C',
+  youMarker: '#7FA8E8',
+} as const;
+
 export type ThemeColor = keyof typeof Colors;
+
+/** The shape shared by both palettes: the same keys, with string values. */
+export type Palette = { readonly [K in ThemeColor]: string };
 
 export const Fonts = Platform.select({
   default: {

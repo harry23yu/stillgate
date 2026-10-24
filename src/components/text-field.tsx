@@ -1,7 +1,9 @@
-import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
+import { TextInput, View, type TextInputProps } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Colors, Fonts, Spacing } from '@/constants/theme';
+import { Fonts, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { useThemedStyles } from '@/hooks/use-themed-styles';
 
 type TextFieldProps = {
   label: string;
@@ -13,6 +15,22 @@ type TextFieldProps = {
 };
 
 export function TextField({ label, value, onChangeText, placeholder, autoCapitalize, accessibilityHint }: TextFieldProps) {
+  const theme = useTheme();
+  const styles = useThemedStyles((c) => ({
+    container: { gap: Spacing.one },
+    input: {
+      minHeight: 44,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: c.border,
+      paddingHorizontal: Spacing.three,
+      fontFamily: Fonts.sans,
+      fontSize: 16,
+      color: c.text,
+      backgroundColor: c.surface,
+    },
+  }));
+
   return (
     <View style={styles.container}>
       <ThemedText type="smallBold">{label}</ThemedText>
@@ -20,7 +38,7 @@ export function TextField({ label, value, onChangeText, placeholder, autoCapital
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={Colors.textSecondary}
+        placeholderTextColor={theme.textSecondary}
         autoCapitalize={autoCapitalize}
         autoCorrect={false}
         accessibilityLabel={label}
@@ -30,20 +48,3 @@ export function TextField({ label, value, onChangeText, placeholder, autoCapital
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    gap: Spacing.one,
-  },
-  input: {
-    minHeight: 44,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    paddingHorizontal: Spacing.three,
-    fontFamily: Fonts.sans,
-    fontSize: 16,
-    color: Colors.text,
-    backgroundColor: Colors.surface,
-  },
-});
