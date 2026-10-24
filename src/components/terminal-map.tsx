@@ -49,6 +49,16 @@ const TYPE_LABEL: Record<PlaceType, string> = {
   food: 'Food spot',
 };
 
+// Keyed by Place.terminal (src/data/mock/sfo.ts). Both International Terminal
+// boarding areas (G and A) map to the same human-readable label.
+const TERMINAL_LABEL: Record<string, string> = {
+  t1: 'Terminal 1',
+  t2: 'Terminal 2',
+  t3: 'Terminal 3',
+  'intl-g': 'International Terminal',
+  'intl-a': 'International Terminal',
+};
+
 type TerminalMapProps = { focusPlaceId?: string };
 
 /**
@@ -246,6 +256,7 @@ function PlaceCard({
   onReport: () => void;
 }) {
   const walkMinutes = estimateWalkMinutes(YOU_POSITION, place);
+  const terminalLabel = TERMINAL_LABEL[place.terminal];
 
   return (
     <Card>
@@ -256,7 +267,7 @@ function PlaceCard({
         </Pill>
       </View>
       <ThemedText type="small" themeColor="textSecondary">
-        Terminal 1 · {place.hours}
+        {terminalLabel ? `${terminalLabel} · ${place.hours}` : place.hours}
       </ThemedText>
       <ThemedText>{place.notes}</ThemedText>
       {place.type !== 'loud' && (

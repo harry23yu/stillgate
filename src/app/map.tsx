@@ -1,5 +1,5 @@
-import { useLocalSearchParams } from 'expo-router';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { TerminalMap } from '@/components/terminal-map';
@@ -14,11 +14,23 @@ export default function MapScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-          <View>
-            <ThemedText type="eyebrow" themeColor="textSecondary">
-              San Francisco International Airport
-            </ThemedText>
-            <ThemedText type="title">SFO terminal map</ThemedText>
+          <View style={styles.header}>
+            <View style={styles.headerText}>
+              <ThemedText type="eyebrow" themeColor="textSecondary">
+                San Francisco International Airport
+              </ThemedText>
+              <ThemedText type="title">SFO terminal map</ThemedText>
+            </View>
+            <Pressable
+              onPress={() => router.back()}
+              accessibilityRole="button"
+              accessibilityLabel="Close"
+              hitSlop={12}
+              style={styles.closeButton}>
+              <ThemedText type="smallBold" themeColor="primary">
+                Close
+              </ThemedText>
+            </Pressable>
           </View>
           <TerminalMap focusPlaceId={focus} />
         </ScrollView>
@@ -38,5 +50,19 @@ const styles = StyleSheet.create({
     padding: Spacing.four,
     gap: Spacing.three,
     paddingBottom: Spacing.six,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: Spacing.two,
+  },
+  headerText: {
+    flex: 1,
+  },
+  closeButton: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.two,
   },
 });
