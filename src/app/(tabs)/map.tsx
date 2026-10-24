@@ -131,7 +131,7 @@ export default function MapScreen() {
                 style={[styles.pin, { left: `${place.x * 100}%`, top: `${place.y * 100}%` }]}>
                 {highlightedId === place.id && <View style={styles.pinHighlightRing} />}
                 <IconSymbol
-                  name={PIN_ICON[place.type as 'quiet' | 'service']}
+                  name={PIN_ICON[place.type as 'quiet' | 'service' | 'food']}
                   size={26}
                   color={place.type === 'quiet' ? Colors.primary : Colors.border}
                 />
@@ -149,6 +149,7 @@ export default function MapScreen() {
           <View style={styles.legend}>
             <LegendItem icon="moon.zzz.fill" color={Colors.primary} label="Quiet" />
             <LegendItem icon="info.circle.fill" color={Colors.border} label="Service" />
+            <LegendItem icon="fork.knife" color={Colors.border} label="Food" />
             <LegendItem icon="square.dashed" color={Colors.estimateBorder} label="Loud (estimate)" />
           </View>
 
@@ -169,7 +170,7 @@ export default function MapScreen() {
   );
 }
 
-function LegendItem({ icon, color, label }: { icon: 'moon.zzz.fill' | 'info.circle.fill' | 'square.dashed'; color: string; label: string }) {
+function LegendItem({ icon, color, label }: { icon: 'moon.zzz.fill' | 'info.circle.fill' | 'fork.knife' | 'square.dashed'; color: string; label: string }) {
   return (
     <View style={styles.legendItem}>
       <IconSymbol name={icon} size={16} color={color} />
