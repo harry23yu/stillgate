@@ -24,5 +24,8 @@
     "ajv-cli": "^5.0.0",
     "ts-json-schema-generator": "^2.9.0",
     "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "convex": "^1.48.0"
   }
 }
