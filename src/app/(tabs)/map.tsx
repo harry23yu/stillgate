@@ -31,7 +31,7 @@ const TYPE_LABEL: Record<PlaceType, string> = {
   quiet: 'Quiet spot',
   loud: 'Typically busy (estimate)',
   service: 'Service',
-  food: 'Food',
+  food: 'Food spot',
 };
 
 export default function MapScreen() {
