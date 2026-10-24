@@ -7,23 +7,22 @@ import { Button } from '@/components/button';
 import { Card } from '@/components/card';
 import { IconSymbol } from '@/components/icon-symbol';
 import { Pill } from '@/components/pill';
+import { TerminalMap } from '@/components/terminal-map';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Spacing } from '@/constants/theme';
-import { getAirport, getFlightStatus } from '@/data/client';
+import { getFlightStatus } from '@/data/client';
 import { getSavedFlight } from '@/data/saved-flight';
-import type { Airport, FlightLookup, Place } from '@/data/types';
+import type { FlightLookup } from '@/data/types';
 import { FLIGHT_STATUS_LABEL, formatDateHeader, formatTime } from '@/lib/format';
 
 export default function HomeScreen() {
-  const [airport, setAirport] = useState<Airport | null>(null);
   const [flight, setFlight] = useState<FlightLookup | null>(null);
   const [flightDate, setFlightDate] = useState<string | null>(null);
   const [unmatchedFlightNumber, setUnmatchedFlightNumber] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
-      getAirport('SFO').then(setAirport);
       getSavedFlight().then(async (saved) => {
         if (!saved) {
           setFlight(null);
@@ -44,8 +43,6 @@ export default function HomeScreen() {
       });
     }, []),
   );
-
-  const quietPlaces = airport?.places.filter((place) => place.type === 'quiet') ?? [];
 
   return (
     <ThemedView style={styles.container}>
@@ -168,21 +165,24 @@ export default function HomeScreen() {
           <View style={styles.sectionHeader}>
             <View>
               <ThemedText type="eyebrow" themeColor="textSecondary">
-                Made for your needs
+                San Francisco International Airport
               </ThemedText>
-              <ThemedText type="subtitle">Quiet places nearby</ThemedText>
+              <ThemedText type="subtitle">SFO terminal map</ThemedText>
             </View>
-            <Pressable
-              onPress={() => router.push('/map')}
-              accessibilityRole="button"
-              accessibilityLabel="View full map">
-              <ThemedText type="smallBold" themeColor="primary">
-                View map
-              </ThemedText>
-            </Pressable>
           </View>
 
-          <MapPreview places={quietPlaces} />
+          <TerminalMap />
+
+          <Pressable
+            onPress={() => router.push('/map')}
+            accessibilityRole="button"
+            accessibilityLabel="Open full map"
+            style={({ pressed }) => [styles.openMapButton, pressed && styles.openMapButtonPressed]}>
+            <IconSymbol name="map.fill" size={32} color={Colors.surface} />
+            <ThemedText type="subtitle" style={styles.openMapLabel}>
+              Open full map
+            </ThemedText>
+          </Pressable>
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
@@ -197,27 +197,6 @@ function Stat({ label, value }: { label: string; value: string }) {
       </ThemedText>
       <ThemedText type="smallBold">{value}</ThemedText>
     </View>
-  );
-}
-
-function MapPreview({ places }: { places: Place[] }) {
-  return (
-    <ThemedView type="neutralFillAlt" style={styles.mapPreview}>
-      {places.slice(0, 3).map((place) => (
-        <View key={place.id} style={[styles.pin, { left: `${place.x * 100}%`, top: `${place.y * 100}%` }]}>
-          <IconSymbol name="mappin.circle.fill" size={22} color={Colors.primary} />
-        </View>
-      ))}
-      <View style={[styles.pin, styles.youPin]}>
-        <View style={styles.youDot} />
-        <ThemedText type="small" style={styles.youLabel}>
-          You
-        </ThemedText>
-      </View>
-      <ThemedText type="small" themeColor="textSecondary" style={styles.mapLabel}>
-        TERMINAL 1
-      </ThemedText>
-    </ThemedView>
   );
 }
 
@@ -286,41 +265,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: Spacing.two,
   },
-  mapPreview: {
-    height: 160,
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  pin: {
-    position: 'absolute',
-    transform: [{ translateX: -11 }, { translateY: -11 }],
-  },
-  youPin: {
-    left: '45%',
-    top: '70%',
-    flexDirection: 'row',
+  openMapButton: {
+    minHeight: 120,
+    borderRadius: 24,
+    backgroundColor: Colors.primary,
     alignItems: 'center',
-    gap: 4,
+    justifyContent: 'center',
+    gap: Spacing.one,
   },
-  youDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: Colors.youMarker,
-    borderWidth: 2,
-    borderColor: Colors.surface,
-  },
-  youLabel: {
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  mapLabel: {
-    position: 'absolute',
-    left: Spacing.three,
-    bottom: Spacing.two,
-    letterSpacing: 1,
-  },
+  openMapButtonPressed: { opacity: 0.85 },
+  openMapLabel: { color: Colors.surface },
 });
