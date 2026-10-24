@@ -8,13 +8,17 @@
  * @module
  */
 
+import type * as airports from "../airports.js";
+
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
 } from "convex/server";
 
-declare const fullApi: ApiFromModules<{}>;
+declare const fullApi: ApiFromModules<{
+  airports: typeof airports;
+}>;
 
 /**
  * A utility for referencing Convex functions in your app's public API.
