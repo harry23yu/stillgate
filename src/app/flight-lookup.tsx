@@ -8,11 +8,11 @@ import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Spacing } from '@/constants/theme';
-import { sampleFlight } from '@/data/mock/flight';
+import { sampleChsFlight, sampleFlight } from '@/data/mock/flight';
 import { clearSavedFlight, getSavedFlight, saveFlight } from '@/data/saved-flight';
+import type { FlightLookup } from '@/data/types';
 
-const DEMO_FLIGHT_NUMBER = sampleFlight.flight;
-const DEMO_FLIGHT_DATE = sampleFlight.scheduledDeparture.slice(0, 10);
+const DEMO_FLIGHTS = [sampleFlight, sampleChsFlight];
 
 function todayIsoDate(): string {
   return new Date().toISOString().slice(0, 10);
@@ -38,7 +38,7 @@ export default function FlightLookupScreen() {
     const trimmedFlightNumber = flightNumber.trim().toUpperCase();
     const trimmedDate = date.trim();
     if (!trimmedFlightNumber || !trimmedDate) {
-      setError('Enter both a flight number and a date — SFO looks up flights by both together.');
+      setError('Enter both a flight number and a date to look up a specific flight.');
       return;
     }
     if (!isValidIsoDate(trimmedDate)) {
@@ -78,9 +78,9 @@ export default function FlightLookupScreen() {
     }
   }
 
-  function fillDemoFlight() {
-    setFlightNumber(DEMO_FLIGHT_NUMBER);
-    setDate(DEMO_FLIGHT_DATE);
+  function fillDemoFlight(flight: FlightLookup) {
+    setFlightNumber(flight.flight);
+    setDate(flight.scheduledDeparture.slice(0, 10));
     setError(null);
   }
 
@@ -102,9 +102,8 @@ export default function FlightLookupScreen() {
         </View>
 
         <ThemedText themeColor="textSecondary" style={styles.intro}>
-          Flights are looked up by flight number and date together — a flight number alone
-          isn&apos;t enough to find a specific flight. This demo only recognizes one sample flight; a
-          real lookup against the SFO flight data API isn&apos;t wired up yet.
+          Flights are looked up by flight number and date together. This demo recognizes the SFO
+          and Charleston examples; live flight lookups are not wired up yet.
         </ThemedText>
 
         <View style={styles.form}>
@@ -112,7 +111,7 @@ export default function FlightLookupScreen() {
             label="Flight number"
             value={flightNumber}
             onChangeText={setFlightNumber}
-            placeholder="e.g. AA 1623"
+            placeholder="e.g. UA 1"
             autoCapitalize="characters"
             accessibilityHint="For example, A A space 1623"
           />
@@ -123,7 +122,7 @@ export default function FlightLookupScreen() {
               value={date}
               onChangeText={setDate}
               placeholder="YYYY-MM-DD"
-              accessibilityHint="Year dash month dash day, for example 2026-10-23"
+            accessibilityHint="Year dash month dash day, for example 2026-10-24"
             />
             <Pressable
               onPress={() => setDate(todayIsoDate())}
@@ -136,11 +135,14 @@ export default function FlightLookupScreen() {
             </Pressable>
           </View>
 
-          <Button
-            label={`Use demo flight (${DEMO_FLIGHT_NUMBER} on ${DEMO_FLIGHT_DATE})`}
-            variant="secondary"
-            onPress={fillDemoFlight}
-          />
+          {DEMO_FLIGHTS.map((demoFlight) => (
+            <Button
+              key={demoFlight.flight}
+              label={`${demoFlight.origin.code} example · ${demoFlight.flight} to ${demoFlight.destination.code}`}
+              variant="secondary"
+              onPress={() => fillDemoFlight(demoFlight)}
+            />
+          ))}
 
           {error && (
             <ThemedText type="small" themeColor="textSecondary" style={styles.error}>

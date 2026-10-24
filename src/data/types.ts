@@ -4,6 +4,7 @@
  */
 
 export type PlaceType = 'quiet' | 'loud' | 'service' | 'food';
+export type AirportCode = 'SFO' | 'CHS';
 
 export type Confidence = 'low' | 'medium' | 'high';
 

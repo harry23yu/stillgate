@@ -35,9 +35,25 @@ export default function GateChangeScreen() {
   const [gentleAlertsOnly, setGentleAlertsOnly] = useState(true);
 
   useEffect(() => {
-    getAirport('SFO').then(setAirport);
-    getFlightStatus(flightNumber, date).then(setBefore);
-    simulateGateChange(flightNumber, date).then(setAfter);
+    let active = true;
+    async function loadFlightAndAirport() {
+      const [beforeFlight, afterFlight] = await Promise.all([
+        getFlightStatus(flightNumber, date),
+        simulateGateChange(flightNumber, date),
+      ]);
+      if (!active) return;
+      setBefore(beforeFlight);
+      setAfter(afterFlight);
+      if (beforeFlight) {
+        const airportCode = beforeFlight.origin.code === 'CHS' ? 'CHS' : 'SFO';
+        const matchingAirport = await getAirport(airportCode);
+        if (active) setAirport(matchingAirport);
+      }
+    }
+    void loadFlightAndAirport();
+    return () => {
+      active = false;
+    };
   }, [flightNumber, date]);
 
   if (!airport || !before || !after) {
@@ -45,6 +61,7 @@ export default function GateChangeScreen() {
   }
 
   const newGate = after.gate;
+  const originCode = before.origin.code;
   const areaId = airport.gateAreas[newGate];
   const areaCenter = areaId ? airport.areaCenters[areaId] : YOU_POSITION;
   const quietPlace = getNearestQuietPlace(airport, newGate);
@@ -55,9 +72,12 @@ export default function GateChangeScreen() {
   }
 
   function handleShowWayToGate() {
+    const location = originCode === 'CHS'
+      ? `Concourse ${newGate.charAt(0)} at Charleston International Airport`
+      : 'the International Terminal at SFO';
     Alert.alert(
       `Gate ${newGate}`,
-      `Gate ${newGate} is in the C concourse of Terminal 1. Turn-by-turn directions are not part of this demo — use the map to see the area.`,
+      `Gate ${newGate} is in ${location}. Turn-by-turn directions are not part of this demo — use the map to see the area.`,
     );
   }
 

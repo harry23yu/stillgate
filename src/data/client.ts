@@ -1,6 +1,12 @@
-import { sampleFlight, sampleFlightAfterGateChange } from '@/data/mock/flight';
+import {
+  sampleChsFlight,
+  sampleChsFlightAfterGateChange,
+  sampleFlight,
+  sampleFlightAfterGateChange,
+} from '@/data/mock/flight';
+import { chsAirport } from '@/data/mock/chs';
 import { sfoAirport } from '@/data/mock/sfo';
-import type { Airport, FlightLookup, Place, PlaceType } from '@/data/types';
+import type { Airport, AirportCode, FlightLookup, Place, PlaceType } from '@/data/types';
 
 /**
  * Single module boundary for airport/flight data. Every call here currently
@@ -8,9 +14,13 @@ import type { Airport, FlightLookup, Place, PlaceType } from '@/data/types';
  * file. See CLAUDE.md §5.
  */
 
-const airportsByCode: Record<string, Airport> = {
+const airportsByCode: Record<AirportCode, Airport> = {
   SFO: sfoAirport,
+  CHS: chsAirport,
 };
+
+const sampleFlights = [sampleFlight, sampleChsFlight];
+const sampleFlightsAfterGateChange = [sampleFlightAfterGateChange, sampleChsFlightAfterGateChange];
 
 /** Schematic position of the "You" marker, shared by the dashboard preview and the map. */
 export const YOU_POSITION = { x: 0.45, y: 0.7 };
@@ -50,7 +60,7 @@ export function getNearestQuietPlace(airport: Airport, gate: string): Place | nu
   return getNearestPlace(airport, gate, 'quiet');
 }
 
-export async function getAirport(code: string): Promise<Airport | null> {
+export async function getAirport(code: AirportCode): Promise<Airport | null> {
   return airportsByCode[code] ?? null;
 }
 
@@ -60,12 +70,12 @@ export async function getAirport(code: string): Promise<Airport | null> {
  * alone isn't enough to find a specific flight. `date` is a YYYY-MM-DD string.
  */
 export async function getFlightStatus(flightNumber: string, date: string): Promise<FlightLookup | null> {
-  return matchesFlight(sampleFlight, flightNumber, date) ? sampleFlight : null;
+  return sampleFlights.find((flight) => matchesFlight(flight, flightNumber, date)) ?? null;
 }
 
 /** Returns the flight's state after the labeled, simulated gate change. */
 export async function simulateGateChange(flightNumber: string, date: string): Promise<FlightLookup | null> {
-  return matchesFlight(sampleFlightAfterGateChange, flightNumber, date) ? sampleFlightAfterGateChange : null;
+  return sampleFlightsAfterGateChange.find((flight) => matchesFlight(flight, flightNumber, date)) ?? null;
 }
 
 function matchesFlight(flight: FlightLookup, flightNumber: string, date: string): boolean {

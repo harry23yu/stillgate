@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useFocusEffect } from 'expo-router';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, View, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, View, type ImageSourcePropType, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
@@ -9,10 +8,9 @@ import { IconSymbol } from '@/components/icon-symbol';
 import { Pill } from '@/components/pill';
 import { ThemedText } from '@/components/themed-text';
 import { Colors, Spacing } from '@/constants/theme';
-import { estimateWalkMinutes, getAirport, getFlightStatus, YOU_POSITION } from '@/data/client';
-import { getSavedFlight } from '@/data/saved-flight';
-import type { Airport, FlightLookup, Place, PlaceType } from '@/data/types';
-import { focusForGate, mapPointForGate, mapPointForPlace, SFO_MAP_IMAGE_SIZE, type AirportMapFocus } from '@/lib/sfo-map-layout';
+import { estimateWalkMinutes, getAirport, YOU_POSITION } from '@/data/client';
+import type { Airport, AirportCode, FlightLookup, Place, PlaceType } from '@/data/types';
+import { focusForGate, mapPointForGate, mapPointForPlace, MAP_IMAGE_SIZE, type AirportMapFocus } from '@/lib/sfo-map-layout';
 
 const FILTERS: { type: PlaceType; label: string }[] = [
   { type: 'quiet', label: 'Quiet spots' },
@@ -21,19 +19,33 @@ const FILTERS: { type: PlaceType; label: string }[] = [
   { type: 'food', label: 'Food' },
 ];
 
-const TERMINALS: { id: AirportMapFocus; label: string }[] = [
-  { id: 'all', label: 'Whole airport' },
-  { id: 't1', label: 'Terminal 1' },
-  { id: 't2', label: 'Terminal 2' },
-  { id: 't3', label: 'Terminal 3' },
-  { id: 'intl', label: 'International' },
-];
+const TERMINALS: Record<AirportCode, { id: AirportMapFocus; label: string }[]> = {
+  SFO: [
+    { id: 'all', label: 'Whole airport' },
+    { id: 't1', label: 'Terminal 1' },
+    { id: 't2', label: 'Terminal 2' },
+    { id: 't3', label: 'Terminal 3' },
+    { id: 'intl', label: 'International' },
+  ],
+  CHS: [
+    { id: 'all', label: 'Whole airport' },
+    { id: 'concourse-a', label: 'Concourse A' },
+    { id: 'concourse-b', label: 'Concourse B' },
+  ],
+};
+
+const AIRPORT_MAP_IMAGES: Record<AirportCode, ImageSourcePropType> = {
+  SFO: require('../../assets/images/sfo-airport-overview.png'),
+  CHS: require('../../assets/images/chs-airport-overview.png'),
+};
 
 const FOCUS_CENTERS: Partial<Record<AirportMapFocus, { x: number; y: number }>> = {
   t1: { x: 1310, y: 590 },
   t2: { x: 820, y: 225 },
   t3: { x: 275, y: 545 },
   intl: { x: 820, y: 1030 },
+  'concourse-a': { x: 1640, y: 440 },
+  'concourse-b': { x: 730, y: 300 },
 };
 
 const PIN_ICON: Record<'quiet' | 'service' | 'food', 'moon.zzz.fill' | 'info.circle.fill' | 'fork.knife'> = {
@@ -44,9 +56,16 @@ const PIN_ICON: Record<'quiet' | 'service' | 'food', 'moon.zzz.fill' | 'info.cir
 
 const TYPE_LABEL: Record<PlaceType, string> = {
   quiet: 'Quiet spot',
-  loud: 'Typically busy (estimate)',
+  loud: 'Busy area · estimate',
   service: 'Service',
   food: 'Food spot',
+};
+
+const CHS_TYPE_LABEL: Record<PlaceType, string> = {
+  quiet: 'Sample quiet spot',
+  loud: 'Busy area · sample',
+  service: 'Sample service',
+  food: 'Sample food',
 };
 
 // Keyed by Place.terminal (src/data/mock/sfo.ts). Both International Terminal
@@ -57,9 +76,15 @@ const TERMINAL_LABEL: Record<string, string> = {
   t3: 'Terminal 3',
   'intl-g': 'International Terminal',
   'intl-a': 'International Terminal',
+  'concourse-a': 'Concourse A',
+  'concourse-b': 'Concourse B',
 };
 
-type TerminalMapProps = { focusPlaceId?: string };
+type TerminalMapProps = {
+  airportCode: AirportCode;
+  flight: FlightLookup | null;
+  focusPlaceId?: string;
+};
 
 /**
  * Terminal schematic + filters + place details, shared by the full-screen
@@ -68,18 +93,17 @@ type TerminalMapProps = { focusPlaceId?: string };
  * ScrollView around the schematic canvas, which nests safely inside a
  * caller's own vertical scroll. See CLAUDE.md §4.
  */
-export function TerminalMap({ focusPlaceId }: TerminalMapProps) {
+export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapProps) {
   const [airport, setAirport] = useState<Airport | null>(null);
-  const [activeFilters, setActiveFilters] = useState<Record<PlaceType, boolean>>({
+  const [activeFilters, setActiveFilters] = useState<Record<PlaceType, boolean>>(() => ({
     quiet: true,
-    loud: false,
-    service: false,
-    food: false,
-  });
+    loud: airportCode === 'CHS',
+    service: airportCode === 'CHS',
+    food: airportCode === 'CHS',
+  }));
   const [selectedId, setSelectedId] = useState<string | null>(focusPlaceId ?? null);
   const [highlightedId, setHighlightedId] = useState<string | null>(focusPlaceId ?? null);
   const [mapFocus, setMapFocus] = useState<AirportMapFocus>('all');
-  const [flight, setFlight] = useState<FlightLookup | null>(null);
   const [zoom, setZoom] = useState(1);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const horizontalScroll = useRef<ScrollViewInstance>(null);
@@ -88,27 +112,17 @@ export function TerminalMap({ focusPlaceId }: TerminalMapProps) {
   const previousView = useRef({ focus: mapFocus, zoom });
 
   useEffect(() => {
-    getAirport('SFO').then(setAirport);
-  }, []);
+    let active = true;
+    getAirport(airportCode).then((result) => {
+      if (active) setAirport(result);
+    });
+    return () => {
+      active = false;
+    };
+  }, [airportCode]);
 
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-      getSavedFlight().then(async (saved) => {
-        if (!saved) {
-          if (active) setFlight(null);
-          return;
-        }
-        const result = await getFlightStatus(saved.flightNumber, saved.date);
-        if (active) setFlight(result);
-      });
-      return () => {
-        active = false;
-      };
-    }, []),
-  );
-
-  const imageAspectRatio = SFO_MAP_IMAGE_SIZE.width / SFO_MAP_IMAGE_SIZE.height;
+  const imageSize = MAP_IMAGE_SIZE[airportCode];
+  const imageAspectRatio = imageSize.width / imageSize.height;
   const baseImageWidth = Math.min(viewport.width, viewport.height * imageAspectRatio);
   const imageWidth = baseImageWidth * zoom;
   const imageHeight = imageWidth / imageAspectRatio;
@@ -155,16 +169,16 @@ export function TerminalMap({ focusPlaceId }: TerminalMapProps) {
         return;
       }
       horizontalScroll.current?.scrollTo({
-        x: imageLeft + (center.x / SFO_MAP_IMAGE_SIZE.width) * imageWidth - viewport.width / 2,
+        x: imageLeft + (center.x / imageSize.width) * imageWidth - viewport.width / 2,
         animated: true,
       });
       verticalScroll.current?.scrollTo({
-        y: imageTop + (center.y / SFO_MAP_IMAGE_SIZE.height) * imageHeight - viewport.height / 2,
+        y: imageTop + (center.y / imageSize.height) * imageHeight - viewport.height / 2,
         animated: true,
       });
     }, 80);
     return () => clearTimeout(timer);
-  }, [baseImageWidth, imageAspectRatio, imageHeight, imageLeft, imageTop, imageWidth, mapFocus, viewport.height, viewport.width, zoom]);
+  }, [airportCode, baseImageWidth, imageAspectRatio, imageHeight, imageLeft, imageSize.height, imageSize.width, imageTop, imageWidth, mapFocus, viewport.height, viewport.width, zoom]);
 
   const selectedPlace = useMemo(
     () => airport?.places.find((place) => place.id === selectedId) ?? null,
@@ -209,11 +223,26 @@ export function TerminalMap({ focusPlaceId }: TerminalMapProps) {
     mapFocus === 'all' || place.terminal === mapFocus || (mapFocus === 'intl' && place.terminal.startsWith('intl-'));
   const pins = airport.places.filter((place) => place.type !== 'loud' && activeFilters[place.type] && isInFocus(place));
   const loudZones = airport.places.filter((place) => place.type === 'loud' && activeFilters.loud && isInFocus(place));
-  const gatePoint = flight ? mapPointForGate(flight.gate) : null;
-  const flightFocus = flight ? focusForGate(flight.gate) : null;
+  const gatePoint = flight ? mapPointForGate(flight.gate, airportCode) : null;
+  const flightFocus = flight ? focusForGate(flight.gate, airportCode) : null;
 
   return (
     <View style={styles.container}>
+      {!airport.verified && (
+        <View style={styles.demoNotice}>
+          <IconSymbol name="info.circle.fill" size={18} color={Colors.primary} />
+          <View style={styles.demoNoticeCopy}>
+            <ThemedText type="smallBold">Charleston demo map</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              The map is from CHS. Place pins are examples and haven’t been verified.
+            </ThemedText>
+          </View>
+        </View>
+      )}
+
+      <View style={styles.sectionHeading}>
+        <ThemedText type="smallBold">Places on the map</ThemedText>
+      </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
         {FILTERS.map((filter) => (
           <Chip
@@ -225,8 +254,11 @@ export function TerminalMap({ focusPlaceId }: TerminalMapProps) {
         ))}
       </ScrollView>
 
+      <View style={styles.sectionHeading}>
+        <ThemedText type="smallBold">Airport areas</ThemedText>
+      </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-        {TERMINALS.map((target) => (
+        {TERMINALS[airportCode].map((target) => (
           <Chip
             key={target.id}
             label={target.label}
@@ -261,7 +293,7 @@ export function TerminalMap({ focusPlaceId }: TerminalMapProps) {
       </View>
 
       <View style={styles.schematicWrapper}>
-        <View style={styles.mapViewport} onLayout={onMapLayout}>
+        <View style={[styles.mapViewport, airportCode === 'CHS' && styles.wideMapViewport]} onLayout={onMapLayout}>
           {viewport.width > 0 && (
             <ScrollView
               ref={horizontalScroll}
@@ -282,11 +314,11 @@ export function TerminalMap({ focusPlaceId }: TerminalMapProps) {
                 contentContainerStyle={{ width: contentWidth, height: contentHeight }}>
                 <View style={{ width: contentWidth, height: contentHeight, position: 'relative' }}>
                   <Image
-                    source={require('../../assets/images/sfo-airport-overview.png')}
+                    source={AIRPORT_MAP_IMAGES[airportCode]}
                     resizeMode="contain"
                     style={[styles.airportImage, { left: imageLeft, top: imageTop, width: imageWidth, height: imageHeight }]}
                     accessible
-                    accessibilityLabel="SFO airport overview showing terminals, gates, garages, and AirTrain connections"
+                    accessibilityLabel={`${airport.name} airport overview map`}
                   />
 
             {loudZones.map((place) => (
@@ -294,15 +326,15 @@ export function TerminalMap({ focusPlaceId }: TerminalMapProps) {
                 key={place.id}
                 onPress={() => selectPlace(place)}
                 accessibilityRole="button"
-                accessibilityLabel={`${place.name}, typically busy, estimate`}
+                accessibilityLabel={airportCode === 'CHS'
+                  ? `${place.name}, sample busy area, not measured`
+                  : `${place.name}, typically busy, estimate`}
                 style={[
                   styles.loudZone,
-                  mapPositionStyle(mapPointForPlace(place), imageLayout),
+                  mapPositionStyle(mapPointForPlace(place, airportCode), imageLayout, imageSize),
                   selectedId === place.id && styles.loudZoneSelected,
                 ]}>
-                <ThemedText type="small" style={styles.loudZoneLabel} numberOfLines={2}>
-                  {place.name}
-                </ThemedText>
+                <IconSymbol name="waveform" size={15} color={Colors.estimateText} />
               </Pressable>
             ))}
 
@@ -311,9 +343,9 @@ export function TerminalMap({ focusPlaceId }: TerminalMapProps) {
                 key={place.id}
                 onPress={() => selectPlace(place)}
                 accessibilityRole="button"
-                accessibilityLabel={`${TYPE_LABEL[place.type]}: ${place.name}`}
+                accessibilityLabel={`${airportCode === 'CHS' ? CHS_TYPE_LABEL[place.type] : TYPE_LABEL[place.type]}: ${place.name}`}
                 hitSlop={8}
-                style={[styles.pin, mapPositionStyle(mapPointForPlace(place), imageLayout)]}>
+                style={[styles.pin, mapPositionStyle(mapPointForPlace(place, airportCode), imageLayout, imageSize)]}>
                 {highlightedId === place.id && <View style={styles.pinHighlightRing} />}
                 <IconSymbol
                   name={PIN_ICON[place.type as 'quiet' | 'service' | 'food']}
@@ -324,7 +356,7 @@ export function TerminalMap({ focusPlaceId }: TerminalMapProps) {
             ))}
 
             {gatePoint && flight && (
-              <View style={[styles.flightGateMarker, mapPositionStyle(gatePoint, imageLayout)]}>
+              <View style={[styles.flightGateMarker, mapPositionStyle(gatePoint, imageLayout, imageSize)]}>
                 <View style={styles.flightGateDot} />
                 <ThemedText type="smallBold" style={styles.flightGateLabel}>{flight.gate}</ThemedText>
               </View>
@@ -336,22 +368,35 @@ export function TerminalMap({ focusPlaceId }: TerminalMapProps) {
         </View>
       </View>
       <ThemedText type="small" themeColor="textSecondary" style={styles.schematicCaption}>
-        Airport overview shown as provided. Place and gate markers are approximate.
+        {airportCode === 'SFO'
+          ? 'Airport overview shown as provided. Place and gate markers are approximate.'
+          : 'Charleston overview shown as provided. Sample pins are approximate and unverified.'}
       </ThemedText>
 
-      <View style={styles.legend}>
-        <LegendItem icon="moon.zzz.fill" color={Colors.primary} label="Quiet" />
-        <LegendItem icon="info.circle.fill" color={Colors.border} label="Service" />
-        <LegendItem icon="fork.knife" color={Colors.border} label="Food" />
-        <LegendItem icon="square.dashed" color={Colors.estimateBorder} label="Loud (estimate)" />
-      </View>
+      {airport.places.length > 0 && (
+        <View style={styles.legend}>
+          <LegendItem icon="moon.zzz.fill" color={Colors.primary} label="Quiet" />
+          <LegendItem icon="info.circle.fill" color={Colors.border} label="Service" />
+          <LegendItem icon="fork.knife" color={Colors.border} label="Food" />
+          <LegendItem icon="square.dashed" color={Colors.estimateBorder} label={airportCode === 'CHS' ? 'Busy area · sample' : 'Busy area · estimate'} />
+        </View>
+      )}
 
-      {selectedPlace ? (
+      {airport.places.length === 0 ? (
+        <Card>
+          <ThemedText type="smallBold">Charleston airport example</ThemedText>
+          <ThemedText themeColor="textSecondary">
+            Choose Concourse A or B above to zoom in. Gate and amenity details have not been added to this example.
+          </ThemedText>
+        </Card>
+      ) : selectedPlace ? (
         <PlaceCard
           place={selectedPlace}
+          imageSize={imageSize}
+          airportCode={airportCode}
           from={gatePoint ?? {
-            x: YOU_POSITION.x * SFO_MAP_IMAGE_SIZE.width,
-            y: YOU_POSITION.y * SFO_MAP_IMAGE_SIZE.height,
+            x: YOU_POSITION.x * imageSize.width,
+            y: YOU_POSITION.y * imageSize.height,
           }}
           onTakeMeThere={() => handleTakeMeThere(selectedPlace)}
           onReport={() => handleReport(selectedPlace)}
@@ -368,10 +413,11 @@ export function TerminalMap({ focusPlaceId }: TerminalMapProps) {
 function mapPositionStyle(
   point: { x: number; y: number },
   image: { left: number; top: number; width: number; height: number },
+  imageSize: { width: number; height: number },
 ) {
   return {
-    left: image.left + (point.x / SFO_MAP_IMAGE_SIZE.width) * image.width,
-    top: image.top + (point.y / SFO_MAP_IMAGE_SIZE.height) * image.height,
+    left: image.left + (point.x / imageSize.width) * image.width,
+    top: image.top + (point.y / imageSize.height) * image.height,
   };
 }
 
@@ -388,28 +434,32 @@ function LegendItem({ icon, color, label }: { icon: 'moon.zzz.fill' | 'info.circ
 
 function PlaceCard({
   place,
+  imageSize,
+  airportCode,
   from,
   onTakeMeThere,
   onReport,
 }: {
   place: Place;
+  imageSize: { width: number; height: number };
+  airportCode: AirportCode;
   from: { x: number; y: number };
   onTakeMeThere: () => void;
   onReport: () => void;
 }) {
-  const destination = mapPointForPlace(place);
+  const destination = mapPointForPlace(place, airportCode);
   const walkMinutes = estimateWalkMinutes(
-    { x: from.x / SFO_MAP_IMAGE_SIZE.width, y: from.y / SFO_MAP_IMAGE_SIZE.height },
-    { x: destination.x / SFO_MAP_IMAGE_SIZE.width, y: destination.y / SFO_MAP_IMAGE_SIZE.height },
+    { x: from.x / imageSize.width, y: from.y / imageSize.height },
+    { x: destination.x / imageSize.width, y: destination.y / imageSize.height },
   );
   const terminalLabel = TERMINAL_LABEL[place.terminal];
 
   return (
-    <Card>
+      <Card>
       <View style={styles.cardHeader}>
         <ThemedText type="subtitle">{place.name}</ThemedText>
         <Pill variant={place.type === 'loud' ? 'estimate' : place.type === 'quiet' ? 'success' : 'neutral'}>
-          {TYPE_LABEL[place.type]}
+          {airportCode === 'CHS' ? CHS_TYPE_LABEL[place.type] : TYPE_LABEL[place.type]}
         </Pill>
       </View>
       <ThemedText type="small" themeColor="textSecondary">
@@ -438,6 +488,22 @@ const styles = StyleSheet.create({
   container: {
     gap: Spacing.three,
   },
+  demoNotice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.two,
+    borderRadius: 16,
+    backgroundColor: Colors.primaryLight,
+    paddingHorizontal: Spacing.three,
+    paddingVertical: Spacing.two,
+  },
+  demoNoticeCopy: {
+    flex: 1,
+    gap: Spacing.half,
+  },
+  sectionHeading: {
+    marginBottom: -Spacing.two,
+  },
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'nowrap',
@@ -447,8 +513,11 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: 'hidden',
     backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: Colors.neutralFillAlt,
   },
   mapViewport: { height: 380, width: '100%' },
+  wideMapViewport: { height: 250 },
   airportImage: { position: 'absolute' },
   mapTools: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.two },
   zoomControls: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
@@ -503,25 +572,20 @@ const styles = StyleSheet.create({
   },
   loudZone: {
     position: 'absolute',
-    width: 96,
-    height: 60,
-    marginLeft: -48,
-    marginTop: -30,
-    borderRadius: 12,
+    width: 34,
+    height: 34,
+    marginLeft: -17,
+    marginTop: -17,
+    borderRadius: 17,
     borderWidth: 2,
     borderStyle: 'dashed',
     borderColor: Colors.estimateBorder,
     backgroundColor: Colors.estimateFill,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 4,
   },
   loudZoneSelected: {
     borderWidth: 3,
-  },
-  loudZoneLabel: {
-    color: Colors.estimateText,
-    textAlign: 'center',
   },
   legend: {
     flexDirection: 'row',

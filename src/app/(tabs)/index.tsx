@@ -12,11 +12,12 @@ import { ThemedView } from '@/components/themed-view';
 import { Colors, Spacing } from '@/constants/theme';
 import { getFlightStatus } from '@/data/client';
 import { getSavedFlight } from '@/data/saved-flight';
-import type { FlightLookup } from '@/data/types';
+import type { AirportCode, FlightLookup } from '@/data/types';
 import { FLIGHT_STATUS_LABEL, formatDateHeader, formatTime } from '@/lib/format';
 
 export default function HomeScreen() {
   const [flight, setFlight] = useState<FlightLookup | null>(null);
+  const airportCode: AirportCode = flight?.origin.code === 'CHS' ? 'CHS' : 'SFO';
   const [flightDate, setFlightDate] = useState<string | null>(null);
   const [unmatchedFlightNumber, setUnmatchedFlightNumber] = useState<string | null>(null);
 
@@ -131,8 +132,8 @@ export default function HomeScreen() {
                 <>
                   <ThemedText type="smallBold">We couldn&apos;t find {unmatchedFlightNumber}</ThemedText>
                   <ThemedText themeColor="textSecondary">
-                    This demo only recognizes one sample flight. Try editing your flight or use the demo
-                    flight instead.
+                    This demo recognizes the SFO and Charleston sample flights. Try editing your flight or
+                    choose one of those examples.
                   </ThemedText>
                 </>
               ) : (
@@ -168,8 +169,10 @@ export default function HomeScreen() {
 
           <View style={styles.sectionHeader}>
             <View>
-              <ThemedText type="subtitle">Explore SFO</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">A full airport overview with calm spots</ThemedText>
+              <ThemedText type="subtitle">Explore {airportCode}</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {airportCode === 'CHS' ? 'Whole-airport overview · sample pins' : 'A full airport overview with calm spots'}
+              </ThemedText>
             </View>
             <Pressable onPress={() => router.push('/map')} accessibilityRole="button" hitSlop={8}>
               <ThemedText type="smallBold" themeColor="primary">Open map</ThemedText>
@@ -178,10 +181,12 @@ export default function HomeScreen() {
           <Pressable
             onPress={() => router.push('/map')}
             accessibilityRole="button"
-            accessibilityLabel="Preview of the SFO terminal map. Open map"
+            accessibilityLabel={`Preview of the ${airportCode} airport map. Open map`}
             style={({ pressed }) => [styles.openMapButton, pressed && styles.openMapButtonPressed]}>
             <Image
-              source={require('../../../assets/images/sfo-airport-overview.png')}
+              source={airportCode === 'CHS'
+                ? require('../../../assets/images/chs-airport-overview.png')
+                : require('../../../assets/images/sfo-airport-overview.png')}
               resizeMode="contain"
               style={styles.mapPreview}
               accessible={false}

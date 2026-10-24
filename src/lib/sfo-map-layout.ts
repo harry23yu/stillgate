@@ -1,13 +1,44 @@
-import type { Place } from '@/data/types';
+import type { AirportCode, Place } from '@/data/types';
 
-export type AirportMapFocus = 'all' | 't1' | 't2' | 't3' | 'intl';
+export type AirportMapFocus = 'all' | 't1' | 't2' | 't3' | 'intl' | 'concourse-a' | 'concourse-b';
 
 export type MapPoint = { x: number; y: number };
 
 export const SFO_MAP_IMAGE_SIZE = { width: 1678, height: 1603 };
+export const CHS_MAP_IMAGE_SIZE = { width: 2300, height: 1196 };
+export const MAP_IMAGE_SIZE: Record<AirportCode, { width: number; height: number }> = {
+  SFO: SFO_MAP_IMAGE_SIZE,
+  CHS: CHS_MAP_IMAGE_SIZE,
+};
 
-export function focusForGate(gate: string): AirportMapFocus | null {
+const CHS_GATE_POSITIONS: Record<string, { x: number; y: number }> = {
+  A1: { x: 0.64, y: 0.42 },
+  A2: { x: 0.59, y: 0.35 },
+  A2A: { x: 0.59, y: 0.39 },
+  A3: { x: 0.66, y: 0.41 },
+  A4: { x: 0.62, y: 0.27 },
+  A5: { x: 0.76, y: 0.31 },
+  A6: { x: 0.71, y: 0.29 },
+  A7: { x: 0.75, y: 0.33 },
+  B1: { x: 0.40, y: 0.33 },
+  B2: { x: 0.31, y: 0.40 },
+  B3: { x: 0.36, y: 0.28 },
+  B4: { x: 0.30, y: 0.33 },
+  B5: { x: 0.37, y: 0.17 },
+  B6: { x: 0.27, y: 0.22 },
+  B7: { x: 0.32, y: 0.12 },
+  B8: { x: 0.26, y: 0.17 },
+  B9: { x: 0.30, y: 0.10 },
+  B10: { x: 0.27, y: 0.12 },
+};
+
+export function focusForGate(gate: string, airportCode: AirportCode = 'SFO'): AirportMapFocus | null {
   const prefix = gate.trim().charAt(0).toUpperCase();
+  if (airportCode === 'CHS') {
+    if (prefix === 'A') return 'concourse-a';
+    if (prefix === 'B') return 'concourse-b';
+    return null;
+  }
   if (prefix === 'B' || prefix === 'C') return 't1';
   if (prefix === 'D') return 't2';
   if (prefix === 'E' || prefix === 'F') return 't3';
@@ -15,7 +46,14 @@ export function focusForGate(gate: string): AirportMapFocus | null {
   return null;
 }
 
-export function mapPointForPlace(place: Place): MapPoint {
+export function mapPointForPlace(place: Place, airportCode: AirportCode = 'SFO'): MapPoint {
+  if (airportCode === 'CHS') {
+    return {
+      x: place.x * CHS_MAP_IMAGE_SIZE.width,
+      y: place.y * CHS_MAP_IMAGE_SIZE.height,
+    };
+  }
+
   const x = place.x * 4050;
   const y = place.y * 420;
 
@@ -56,7 +94,13 @@ export function mapPointForPlace(place: Place): MapPoint {
   }
 }
 
-export function mapPointForGate(gate: string): MapPoint | null {
+export function mapPointForGate(gate: string, airportCode: AirportCode = 'SFO'): MapPoint | null {
+  if (airportCode === 'CHS') {
+    const position = CHS_GATE_POSITIONS[gate.trim().toUpperCase()];
+    return position
+      ? { x: position.x * CHS_MAP_IMAGE_SIZE.width, y: position.y * CHS_MAP_IMAGE_SIZE.height }
+      : null;
+  }
   const prefix = gate.trim().charAt(0).toUpperCase();
   const number = Number(gate.trim().slice(1));
   if (!number) return null;
