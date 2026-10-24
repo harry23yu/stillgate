@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
@@ -9,7 +9,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Spacing } from '@/constants/theme';
 import { sampleFlight } from '@/data/mock/flight';
-import { getSavedFlight, saveFlight } from '@/data/saved-flight';
+import { clearSavedFlight, getSavedFlight, saveFlight } from '@/data/saved-flight';
 
 const DEMO_FLIGHT_NUMBER = sampleFlight.flight;
 const DEMO_FLIGHT_DATE = sampleFlight.scheduledDeparture.slice(0, 10);
@@ -22,10 +22,12 @@ export default function FlightLookupScreen() {
   const [flightNumber, setFlightNumber] = useState('');
   const [date, setDate] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [hasSavedFlight, setHasSavedFlight] = useState(false);
 
   useEffect(() => {
     getSavedFlight().then((saved) => {
       if (saved) {
+        setHasSavedFlight(true);
         setFlightNumber(saved.flightNumber);
         setDate(saved.date);
       }
@@ -39,9 +41,41 @@ export default function FlightLookupScreen() {
       setError('Enter both a flight number and a date — SFO looks up flights by both together.');
       return;
     }
+    if (!isValidIsoDate(trimmedDate)) {
+      setError('Enter a valid date in YYYY-MM-DD format.');
+      return;
+    }
     setError(null);
     await saveFlight({ flightNumber: trimmedFlightNumber, date: trimmedDate });
+    setHasSavedFlight(true);
     router.back();
+  }
+
+  function confirmRemoveFlight() {
+    Alert.alert(
+      'Remove saved flight?',
+      'Your flight details will be removed from this device.',
+      [
+        { text: 'Keep flight', style: 'cancel' },
+        {
+          text: 'Remove flight',
+          style: 'destructive',
+          onPress: () => void removeSavedFlight(),
+        },
+      ],
+    );
+  }
+
+  async function removeSavedFlight() {
+    try {
+      await clearSavedFlight();
+      setHasSavedFlight(false);
+      setFlightNumber('');
+      setDate('');
+      router.back();
+    } catch {
+      setError('We couldn’t remove the saved flight. Please try again.');
+    }
   }
 
   function fillDemoFlight() {
@@ -115,7 +149,14 @@ export default function FlightLookupScreen() {
           )}
         </View>
 
-        <Button label="Save" onPress={handleSave} style={styles.saveButton} />
+        {hasSavedFlight && (
+          <Button
+            label="Remove saved flight"
+            variant="secondary"
+            onPress={confirmRemoveFlight}
+          />
+        )}
+        <Button label={hasSavedFlight ? 'Update flight' : 'Save flight'} onPress={handleSave} style={styles.saveButton} />
       </SafeAreaView>
     </ThemedView>
   );
@@ -161,3 +202,9 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.four,
   },
 });
+
+function isValidIsoDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}

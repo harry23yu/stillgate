@@ -1,5 +1,5 @@
-import { router, useLocalSearchParams } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { TerminalMap } from '@/components/terminal-map';
@@ -16,21 +16,9 @@ export default function MapScreen() {
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
             <View style={styles.headerText}>
-              <ThemedText type="eyebrow" themeColor="textSecondary">
-                San Francisco International Airport
-              </ThemedText>
-              <ThemedText type="title">SFO terminal map</ThemedText>
+              <ThemedText type="title">Explore SFO</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">Find quieter places, services, and food.</ThemedText>
             </View>
-            <Pressable
-              onPress={() => router.back()}
-              accessibilityRole="button"
-              accessibilityLabel="Close"
-              hitSlop={12}
-              style={styles.closeButton}>
-              <ThemedText type="smallBold" themeColor="primary">
-                Close
-              </ThemedText>
-            </Pressable>
           </View>
           <TerminalMap focusPlaceId={focus} />
         </ScrollView>
@@ -51,18 +39,8 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
     paddingBottom: Spacing.six,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: Spacing.two,
-  },
+  header: { gap: Spacing.one },
   headerText: {
     flex: 1,
-  },
-  closeButton: {
-    minHeight: 44,
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.two,
   },
 });

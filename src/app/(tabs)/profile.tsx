@@ -43,7 +43,7 @@ export default function ProfileScreen() {
 
   async function handleSave() {
     await saveProfile({ ...profile, detailLevel: profile.firstFlight ? 'detailed' : 'standard' });
-    router.back();
+    router.replace('/');
   }
 
   if (loading) {
@@ -58,15 +58,15 @@ export default function ProfileScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <ThemedText type="title">Sensory Profile</ThemedText>
+          <ThemedText type="title">Your sensory profile</ThemedText>
           <Pressable
             onPress={() => router.back()}
             accessibilityRole="button"
-            accessibilityLabel="Skip for now"
+            accessibilityLabel="Save sensory profile"
             hitSlop={12}
             style={styles.skipButton}>
             <ThemedText type="smallBold" themeColor="primary">
-              Skip for now
+              Save
             </ThemedText>
           </Pressable>
         </View>

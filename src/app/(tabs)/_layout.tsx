@@ -31,13 +31,15 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol name="house.fill" size={24} color={color} />,
         }}
       />
+      <Tabs.Screen name="map" options={{ title: 'Map', tabBarIcon: ({ color }) => <IconSymbol name="map" size={24} color={color} /> }} />
       <Tabs.Screen
         name="calm-guide"
         options={{
-          title: 'Calm Guide',
-          tabBarIcon: ({ color }) => <IconSymbol name="waveform.circle.fill" size={24} color={color} />,
+          title: 'My trip',
+          tabBarIcon: ({ color }) => <IconSymbol name="map.fill" size={24} color={color} />,
         }}
       />
+      <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: ({ color }) => <IconSymbol name="person.crop.circle" size={24} color={color} /> }} />
     </Tabs>
   );
 }
