@@ -82,6 +82,23 @@ Things the UI must handle:
 - `hours` is free text and is not checked against the current time.
 - Returns `null` for an unknown airport.
 
+### `phrase:phraseSteps` (action)
+
+```bash
+npx convex run phrase:phraseSteps '{"steps":["Your gate changed to C2. The SFO Sensory Room is about 2 minutes away.","It is open from 5:00 a.m. to 11:00 p.m."],"detailLevel":"brief"}'
+```
+
+Claude only rewords steps that code already built; it never decides facts. Send `steps` (up to 8, each up
+to 300 characters) and `detailLevel` (`brief`, `standard` or `detailed`). Returns
+`{ steps, rewritten, reason }`.
+
+- Build the step text from the data in code (gate, place name, minutes, hours), then call this to soften it.
+- Every number and gate token in each step must survive the rewrite, or the original text is returned.
+- On any failure (no key, API error, refusal, bad output, failed check) you get the original steps back with
+  `rewritten: false` and a `reason`. Always show `steps`; use `rewritten` only for debugging.
+- Needs `ANTHROPIC_API_KEY` on the deployment (`npx convex env set ANTHROPIC_API_KEY <key>`).
+- Public and unauthenticated, so anyone with the URL can spend credits. Fine for the event; add rate limiting before launch.
+
 ## Importing airport data (for the Apify Actor)
 
 ```
