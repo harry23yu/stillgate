@@ -2,7 +2,7 @@ import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
+import { LaunchScreen } from '@/components/launch-screen';
 import { Colors } from '@/constants/theme';
 
 SplashScreen.preventAutoHideAsync();
@@ -32,7 +32,7 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={stillgateTheme}>
-      <AnimatedSplashOverlay />
+      <LaunchScreen />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="gate-change" options={{ presentation: 'card' }} />
