@@ -1,24 +1,40 @@
-# Real SFO Terminal 1 schematic — design
+# Real SFO airport schematic — design
 
 Date: 2026-10-23
-Status: Approved by Tyler, pending spec review
+Status: Approved by Tyler (scope expanded to all 4 SFO terminal buildings
+after an explicit cost checkpoint — see §1a), pending spec review
 
 ## 1. Purpose
 
 Replace the Map screen's placeholder background (a flat colored box with no
-real shape) with a custom-drawn schematic of SFO's actual Harvey Milk
-Terminal 1 — not a reuse of SFO's proprietary map image (out of scope per
+real shape) with a custom-drawn schematic of SFO's actual terminal
+complex — not a reuse of SFO's proprietary map image (out of scope per
 CLAUDE.md §12), but our own artwork informed by SFO's real, public layout.
-This also expands the place data from one short concourse to the terminal's
-two real boarding areas, pulling in real named amenities instead of
-generic/invented placeholders.
+This also expands the place data from one short concourse to the airport's
+real boarding areas across all four terminal buildings, pulling in real
+named amenities instead of generic/invented placeholders.
 
 This is new scope beyond CLAUDE.md §4's mockup spec, which only ever assumed
-one unnamed concourse. It fully replaces `MapScreen`'s schematic background
-and the `places`/`gateAreas`/`areaCenters` content of `sfoAirport` in
-`src/data/mock/sfo.ts`. It does not touch Home's `MapPreview` (a small,
-abstract decorative preview, not a literal map — left as-is), and it does not
-touch the quiet-spot recommendation rule's logic, only the data it reads.
+one unnamed concourse, and beyond this spec's own first draft, which covered
+Terminal 1 only (see §1a). It fully replaces `MapScreen`'s schematic
+background and the `places`/`gateAreas`/`areaCenters` content of
+`sfoAirport` in `src/data/mock/sfo.ts`. It does not touch Home's
+`MapPreview` (a small, abstract decorative preview, not a literal map — left
+as-is), and it does not touch the quiet-spot recommendation rule's logic,
+only the data it reads.
+
+### 1a. Scope history (why this covers the whole airport)
+
+The first version of this spec covered Terminal 1 only (Boarding Areas B and
+C). Tyler then asked for the schematic to include the international
+terminal too. Research surfaced that SFO has four real terminal buildings in
+a horseshoe loop — Terminal 1, 2, 3, and the International Terminal — with
+inter-terminal walkways connecting all of them airside. Before expanding,
+Tyler was shown the concrete cost (5 separate security-checkpoint hubs, 7
+piers total, roughly 25–30 new researched places, none of it reachable by
+the app's actual flows, which are Terminal-1-only) and explicitly chose to
+proceed with the full horseshoe at the same research bar everywhere. That
+decision is final for this spec; it is not re-litigated below.
 
 ## 2. Real-world facts this design is based on
 
@@ -26,152 +42,240 @@ touch the quiet-spot recommendation rule's logic, only the data it reads.
 plans. See CLAUDE.md §11: treat as informed-but-unverified, same bar as the
 rest of the mock data.)
 
-- Harvey Milk Terminal 1 has one security checkpoint, **Checkpoint B**
-  (matches the name used by the real Checkpoint Wait Time API per CLAUDE.md
-  §6), feeding two boarding areas:
-  - **Boarding Area C**: gates **C2–C11**. Shorter concourse. The real SFO
-    Sensory Room is here, post-security, near Gate C2 (source: flysfo.com,
-    already in the existing mock data).
-  - **Boarding Area B**: gates **B6–B27**. Longer, newly-expanded concourse
-    — B1–B4 are ~2 minutes from the checkpoint, B19–B27 are ~10 minutes.
-- Real named amenities (source: public SFO terminal/dining guides, not
-  flysfo.com):
-  - Area C: **Perry's** (full-service restaurant, near C1/C2), **Farmerbrown**
-    (Southern comfort food, near C4).
-  - Area B: **Amy's Drive Thru** (near B6), **Illy Caffè** (near B9),
-    **Starbird** (near B13), **Mama Go's Filipino Cuisine** (near B18),
-    **Café X**, 24 hours (near B20).
+**Overall layout.** SFO's four terminal buildings sit in a horseshoe around
+the airfield, connected airside by walkways, in this loop order: **Terminal
+1 → Terminal 2 → Terminal 3 → International Terminal (G side) →
+International Terminal (A side) → back to Terminal 1.**
+
+**Checkpoints.** CLAUDE.md §6 already names the real checkpoints: B
+(Terminal 1), D (Terminal 2), F1/F3 (Terminal 3), A and G (International
+Terminal). Unlike Terminal 1 and Terminal 3, where one checkpoint feeds two
+piers, the International Terminal has **two independent checkpoints** (A
+and G) — there is no single shared post-security hub between them, even
+though their landside check-in hall is shared. This design draws them as
+two separate hub+pier clusters for that reason.
+
+**Per-building facts:**
+
+- **Terminal 1 (Harvey Milk Terminal)** — unchanged from the first draft:
+  Checkpoint B feeds Boarding Area C (gates C2–C11, shorter) and Boarding
+  Area B (gates B6–B27, longer). Real Sensory Room post-security near C2
+  (flysfo.com). Real named food: Perry's and Farmerbrown (Area C); Amy's
+  Drive Thru, Illy Caffè, Starbird, Mama Go's Filipino Cuisine, Café X (Area
+  B).
+- **Terminal 2** — Checkpoint D feeds one concourse, Boarding Area D (gates
+  D1–D18). Real named food: Peet's Coffee & Tea (near D7), Andalé Mexican
+  Restaurant, Burger Joint, near a restroom cluster by "Sunset News."
+  (Simplification: real-world D1 and D18 are both near the checkpoint, which
+  suggests an unusual concourse shape; this schematic simplifies Boarding
+  Area D to one straight pier, D1 at the hub end, D18 at the tip.)
+- **Terminal 3** — one checkpoint (Checkpoint F, lanes F1/F3) feeds Boarding
+  Area E (gates E1–E13, shorter) and Boarding Area F (gates F1–F22,
+  longer). Real named amenity: a Yoga Room in Boarding Area E (near E7) —
+  genuinely relevant to this app's purpose, not just color. Sources named a
+  United Club and a Rotunda near the F gates but no specific restaurants, so
+  Terminal 3's food data is thinner than the others; that gap is noted, not
+  papered over with an invented name.
+- **International Terminal, Boarding Area G** — gates G1–G14, used by United
+  for international flights. Real named food: Napa Farms Market, Mustards
+  Bar & Grill.
+- **International Terminal, Boarding Area A** — gates A1–A15, used by
+  international carriers other than United. Real named food: Boudin Bakery,
+  Gott's Roadside.
 - Membership lounges (Delta Sky Club, Alaska Lounge, Admirals Club, The Club
-  SFO) and retail shops (L'Occitane, iStore, NYS Eyewear) are intentionally
-  **excluded** — not usable by a general sensory-sensitive traveler without
-  membership/purchase, and outside what this app helps with.
+  SFO, United Club, United Polaris Lounge, Air Canada Maple Leaf Lounge) and
+  retail shops are intentionally **excluded everywhere** — not usable by a
+  general sensory-sensitive traveler without membership/purchase, and
+  outside what this app helps with.
 
 ## 3. Shape & layout
 
-A single logical canvas, wider than tall, rendered as SVG
-(`viewBox="0 0 960 420"`, 1 unit = 1 point so pixel math and fraction math
-stay in the same units):
+One logical canvas, rendered as SVG, `viewBox="0 0 4050 420"` (1 unit = 1
+point, so pixel math and fraction math stay in the same units). It reads
+left to right as the horseshoe "unrolled" into a straight strip, in the
+airport's real loop order, connected by a single horizontal walkway spine
+at `y=195–225` running from the Terminal 1 hub to the International
+Terminal A hub.
 
-- **Hub** (the checkpoint region): a rounded rect centered at `(160, 210)`,
-  110×100. This is where the existing `checkpoint-b` place pin sits.
-- **Area C pier** (short): a straight concourse strip, centerline from
-  `(200, 180)` to `(470, 70)`, width 70. Represents the shorter, more
-  established concourse.
-- **Area B pier** (long): a straight concourse strip, centerline from
-  `(200, 240)` to `(920, 380)`, width 70. Represents the longer, newer
-  concourse.
-- Floor fill: `Colors.neutralFillAlt`. Wall stroke: `Colors.border`,
-  width 2. This is drawn by one new component and nothing else — it does not
-  render place pins, loud-zone dashes, or the "You" marker; those stay in
-  `MapScreen` exactly as they work today, just fed new coordinates.
-- **Gate tick marks**: short perpendicular lines on each pier's outer edge.
-  - Area C: 10 ticks (C2..C11) evenly spaced from `t=0.12` to `t=0.95` along
-    the centerline (`t=0` at the hub end). Labeled ticks: first (C2), last
-    (C11), and every 3rd in between (C5, C8).
-  - Area B: 22 ticks (B6..B27) evenly spaced from `t=0.08` to `t=0.97`.
-    Labeled ticks: first (B6), last (B27), and every 3rd in between (B9,
-    B12, B15, B18, B21, B24).
-- A small caption near the schematic (same visual weight as the existing
-  "Last verified" text): **"Drawn from public layout info, not SFO's
-  official architectural plans."**
+Five hub-and-pier clusters sit along that spine. Each hub is a rounded rect,
+110×100, centered on the spine; each pier is a straight concourse strip,
+width 70, branching off its hub at an angle (alternating up/down per
+cluster purely for visual legibility — it is not a claim about true compass
+direction). All positions below are **approximate — implementers may adjust
+by up to ~10% for visual spacing/legibility**; they are not a blueprint.
+
+| Cluster | Hub center | Pier(s): centerline hub→tip | Gates (hub end → tip) |
+|---|---|---|---|
+| Terminal 1 (Checkpoint B) | `(160, 210)` | C: `(200,180)→(470,70)` · B: `(200,240)→(920,380)` | C2…C11 (10) · B6…B27 (22) |
+| Terminal 2 (Checkpoint D) | `(1060, 210)` | D: `(1100,220)→(1600,350)` | D1…D18 (18) |
+| Terminal 3 (Checkpoint F) | `(1960, 210)` | E: `(2000,180)→(2150,90)` · F: `(2000,240)→(2500,380)` | E1…E13 (13) · F1…F22 (22) |
+| International, Boarding Area G (Checkpoint G) | `(2860, 210)` | G: `(2900,240)→(3200,350)` | G1…G14 (14) |
+| International, Boarding Area A (Checkpoint A) | `(3760, 210)` | A: `(3800,180)→(3900,90)` | A1…A15 (15) |
+
+A short dashed stub extends right from the Area A pier tip to the canvas
+edge (around `(3950, 100)`), labeled **"Walkway loops back to Terminal
+1"** — this closes the real loop without requiring an actual circular
+layout, which would be far harder to lay out and label on a phone screen.
+
+**Gate tick marks**: short perpendicular lines on each pier's outer edge,
+evenly spaced from `t=0.08–0.12` (hub end) to `t=0.95–0.97` (tip) along the
+centerline. Labeled ticks on every pier: the first gate, the last gate, and
+every 3rd gate in between. Full labeled sets:
+
+- C (C2–C11): C2, C5, C8, C11
+- B (B6–B27): B6, B9, B12, B15, B18, B21, B24, B27
+- D (D1–D18): D1, D4, D7, D10, D13, D16, D18
+- E (E1–E13): E1, E4, E7, E10, E13
+- F (F1–F22): F1, F4, F7, F10, F13, F16, F19, F22
+- G (G1–G14): G1, G4, G7, G10, G13, G14
+- A (A1–A15): A1, A4, A7, A10, A13, A15
+
+Floor fill: `Colors.neutralFillAlt`. Wall/spine stroke: `Colors.border`,
+width 2. This is drawn by one new component and nothing else — it does not
+render place pins, loud-zone dashes, or the "You" marker; those stay in
+`MapScreen` exactly as they work today, just fed new coordinates.
+
+A small caption near the schematic (same visual weight as the existing
+"Last verified" text): **"Drawn from public layout info, not SFO's official
+architectural plans."**
 
 Place pins keep using the exact same fractional `x`/`y` + `Pressable`
 overlay mechanism already in `map.tsx` (`left: ${x*100}%`, `top:
 ${y*100}%`); only the coordinate values and the container's underlying
 aspect ratio change. A place's fraction is its pixel position on the
-960×420 canvas divided by 960 (x) / 420 (y).
+4050×420 canvas divided by 4050 (x) / 420 (y).
 
 ## 4. Data model changes (`src/data/mock/sfo.ts`)
 
 ### 4.1 `gateAreas`
 
-Replace the current `C1`–`C9` → `area-c` map with the real ranges:
+Extend the existing `Object.fromEntries` pattern with one block per new
+boarding area:
 
 ```ts
+function rangeToArea(prefix: string, from: number, to: number, area: string) {
+  const gates = Array.from({ length: to - from + 1 }, (_, i) => `${prefix}${from + i}`);
+  return Object.fromEntries(gates.map((g) => [g, area]));
+}
+
 gateAreas: {
-  ...Object.fromEntries(['C2','C3','C4','C5','C6','C7','C8','C9','C10','C11'].map((g) => [g, 'area-c'])),
-  ...Object.fromEntries(
-    ['B6','B7','B8','B9','B10','B11','B12','B13','B14','B15','B16','B17','B18','B19','B20','B21','B22','B23','B24','B25','B26','B27'].map((g) => [g, 'area-b']),
-  ),
+  ...rangeToArea('C', 2, 11, 'area-c'),
+  ...rangeToArea('B', 6, 27, 'area-b'),
+  ...rangeToArea('D', 1, 18, 'area-d'),
+  ...rangeToArea('E', 1, 13, 'area-e'),
+  ...rangeToArea('F', 1, 22, 'area-f'),
+  ...rangeToArea('G', 1, 14, 'area-g'),
+  ...rangeToArea('A', 1, 15, 'area-a'),
 }
 ```
 
+`rangeToArea` is a small local helper in `sfo.ts` (not exported) that fully
+enumerates each gate — every range above is complete and literal once
+generated, nothing is left abbreviated at runtime.
 `sampleFlight`/`sampleFlightAfterGateChange` in `data/mock/flight.ts` use
-gates C2 and C7 — both remain valid under the new range, no change needed
-there.
+gates C2 and C7 — both remain valid, no change needed there.
 
 ### 4.2 `areaCenters`
 
+Tip of each pier, as a fraction of the 4050×420 canvas:
+
 ```ts
 areaCenters: {
-  'area-c': { x: 470 / 960, y: 70 / 420 },   // tip of the C pier
-  'area-b': { x: 920 / 960, y: 380 / 420 },  // tip of the B pier
+  'area-c': { x: 470 / 4050, y: 70 / 420 },
+  'area-b': { x: 920 / 4050, y: 380 / 420 },
+  'area-d': { x: 1600 / 4050, y: 350 / 420 },
+  'area-e': { x: 2150 / 4050, y: 90 / 420 },
+  'area-f': { x: 2500 / 4050, y: 380 / 420 },
+  'area-g': { x: 3200 / 4050, y: 350 / 420 },
+  'area-a': { x: 3900 / 4050, y: 90 / 420 },
 }
 ```
 
-(Matches the existing convention: the nearest-quiet-place rule measures from
-a boarding area's approximate center/tip, not the hub.)
-
 ### 4.3 `places` — full replacement list
 
-All existing places are repositioned (new `x`/`y` only; `id`, `notes`,
-`hours`, `confidence`, `source`, `lastVerified` unchanged unless noted) onto
-the new canvas. New places use `confidence: 'medium'`, `source: 'public
-airport guides, Oct 2026'`, `lastVerified: '2026-10-23'`.
+All existing Terminal 1 places are repositioned onto the new wider canvas
+(new `x`/`y` only — `id`, `notes`, `hours`, `confidence`, `source`,
+`lastVerified` unchanged, same as the first draft of this spec). All new
+places use `confidence: 'medium'`, `source: 'public airport guides, Oct
+2026'`, `lastVerified: '2026-10-23'`.
 
-**Area C (existing, repositioned):**
+**Terminal 1 — unchanged from the first draft** (7 existing + 2 new in Area
+C, 8 new in Area B — see that section above for the full per-place list).
+Total for Terminal 1: 17 places.
 
-| id | type | near | change |
+**Terminal 2 — Boarding Area D (6 new):**
+
+| id | type | near | name / notes |
 |---|---|---|---|
-| `sensory-room-t1` | quiet | C2, just past hub | reposition only |
-| `quiet-nook-c9` | quiet | C9, pier tip | reposition only |
-| `restroom-c-mid` | service | C2, near hub | reposition only |
-| `info-desk-t1` | service | hub | reposition only |
-| `checkpoint-b` | loud | hub | reposition only (now serves both piers) |
-| `grab-and-go-c5` | food | C5 | reposition only |
-| `food-court-t1` | loud | was generic; now sits at the real C1–C4 dining cluster | reposition + notes updated to "Busy around meal times near the Perry's/Farmerbrown cluster" |
+| `checkpoint-d` | loud | hub | Security Checkpoint D. Estimate, not a measurement. |
+| `restroom-d9` | service | D9 | Restroom, near "Sunset News." |
+| `peets-d7` | food | D7 | Peet's Coffee & Tea. |
+| `andale-d12` | food | D12 | Andalé Mexican Restaurant. |
+| `burger-joint-d16` | food | D16 | Burger Joint. |
+| `dining-cluster-d7` | loud | D7–D9 | Dining cluster. Busy around meal times near Peet's and Andalé. Estimate, not a measurement. |
 
-**Area C (new):**
+**Terminal 3 — Boarding Areas E & F (5 new):**
 
-| id | type | near | name | notes |
-|---|---|---|---|---|
-| `perrys-c2` | food | C2, hub end of the pier | Perry's | Full-service restaurant: chopped salad, burgers, breakfast. Public guides cite it as "near Gate C1," but C1 isn't in this terminal's current gate range — placed at the C2/hub end instead. |
-| `farmerbrown-c4` | food | C4 | Farmerbrown | Southern comfort food. |
+| id | type | near | name / notes |
+|---|---|---|---|
+| `checkpoint-f` | loud | hub | Security Checkpoint F (lanes F1/F3). Estimate, not a measurement. |
+| `yoga-room-e7` | quiet | E7 | Yoga Room, Boarding Area E. |
+| `restroom-e-mid` | service | E7 | Restroom. |
+| `restroom-f-mid` | service | F15 | Restroom. |
+| `dining-cluster-f-rotunda` | loud | F Gates Rotunda | Dining cluster. Busy near the F Gates Rotunda. Estimate, not a measurement. |
 
-**Area B (all new):**
+No named real restaurant is added for Terminal 3 — sources described "dining
+options" generically but didn't name any, and inventing a name would
+violate the "never present a guess as verified" rule.
 
-| id | type | near | name | notes |
-|---|---|---|---|---|
-| `restroom-b9` | service | B9 | Restroom | — |
-| `restroom-b20` | service | B20 | Restroom | Area B is a ~10 minute walk end to end; a second restroom reflects that length. |
-| `amys-drive-thru-b6` | food | B6 | Amy's Drive Thru | 5:00 AM – 11:00 PM. |
-| `illy-caffe-b9` | food | B9 | Illy Caffè | 4:30 AM – 8:30 PM. |
-| `starbird-b13` | food | B13 | Starbird | 4:00 AM – 11:30 PM. |
-| `mama-gos-b18` | food | B18 | Mama Go's Filipino Cuisine | 3:30 AM – 11:30 PM. |
-| `cafe-x-b20` | food | B20 | Café X | Open 24 hours. |
-| `dining-cluster-b20` | loud | B19–B21 | Dining cluster | Busy around meal times near Café X and the B20 restaurant cluster. Estimate, not a measurement. |
+**International Terminal, Boarding Area G (5 new):**
 
-No `quiet`-type place is added in Area B — nothing in the research confirms
-one exists there, and inventing one would violate CLAUDE.md's "never present
-a guess as verified" rule. The quiet-spot recommendation rule therefore
-stays honestly concentrated in Area C, which matches the real terminal (the
-real Sensory Room is there, not in Area B).
+| id | type | near | name / notes |
+|---|---|---|---|
+| `checkpoint-g` | loud | hub | Security Checkpoint G. Estimate, not a measurement. |
+| `restroom-g-mid` | service | G7 | Restroom. |
+| `napa-farms-market-g` | food | G5 | Napa Farms Market. |
+| `mustards-bar-grill-g` | food | G10 | Mustards Bar & Grill. |
+| `dining-cluster-g` | loud | G5–G10 | Dining cluster. Busy around meal times near Napa Farms Market and Mustards. Estimate, not a measurement. |
 
-Total: 17 places (up from 7).
+**International Terminal, Boarding Area A (5 new):**
+
+| id | type | near | name / notes |
+|---|---|---|---|
+| `checkpoint-a` | loud | hub | Security Checkpoint A. Estimate, not a measurement. |
+| `restroom-a-mid` | service | A7 | Restroom. |
+| `boudin-bakery-a` | food | A4 | Boudin Bakery. |
+| `gotts-roadside-a` | food | A10 | Gott's Roadside. |
+| `dining-cluster-a` | loud | A4–A10 | Dining cluster. Busy around meal times near Boudin Bakery and Gott's Roadside. Estimate, not a measurement. |
+
+No `quiet`-type place is added outside Terminal 1's Area C and Terminal 3's
+Yoga Room — nothing in the research confirms another quiet-specific amenity
+exists elsewhere, and inventing one would violate CLAUDE.md's "never
+present a guess as verified" rule. The quiet-spot recommendation rule's
+*behavior* is unchanged by this spec (§1); it will simply have more real
+candidates to choose from if it's ever pointed at a flight gated outside
+Terminal 1, which no current flow does.
+
+**Total: 38 places (up from the original 7).**
 
 ## 5. Component architecture
 
 - **New** `src/components/terminal-schematic.tsx`: a presentational SVG
   component (`react-native-svg`, new dependency — Expo Go compatible, no dev
-  client needed) implementing §3's hub/piers/ticks/labels. Takes no data
-  props; it is pure background art sized to fill its parent.
+  client needed) implementing §3's hubs/piers/spine/ticks/labels/loop-back
+  stub. Takes no data props; it is pure background art sized to fill its
+  parent.
 - **`src/app/(tabs)/map.tsx`**: replace the `ThemedView type="neutralFillAlt"
   style={styles.schematic}` box with a horizontally-scrolling `ScrollView`
-  containing a fixed-size (960×420-ratio) wrapper that stacks
+  containing a fixed-size (4050×420-ratio) wrapper that stacks
   `TerminalSchematic` underneath the existing pin/loud-zone/You-marker
   `View`s, unchanged in their own logic. The screen keeps vertically
-  scrolling as a whole; only the schematic area scrolls horizontally, so
-  Area B's 22 gates have room without shrinking tap targets below 44px.
+  scrolling as a whole; only the schematic area scrolls horizontally. Given
+  the much greater width, consider a lightweight "jump to" chip row above
+  the schematic (Terminal 1 / Terminal 2 / Terminal 3 / International) that
+  scrolls the horizontal `ScrollView` to that cluster's x-offset — this is a
+  usability add-on, not a correctness requirement; if it's cut for time, the
+  schematic still works via manual scrolling.
 - No changes to `gate-change.tsx`, `index.tsx`, filters, the place card, or
   any data-fetching code — this is a rendering + data-content change only.
 
@@ -181,21 +285,28 @@ No automated test covers SVG layout. Verification is manual, per CLAUDE.md's
 "verify on a real iPhone" rule:
 
 - Run in Expo Go on a real iPhone.
-- Confirm both piers are visibly distinct, gate labels are legible, and the
-  horizontal scroll reaches both pier tips.
-- Confirm every pin (17 places) lands on/near its intended pier and remains
-  tappable at ≥44×44pt.
+- Confirm all 5 hubs and 7 piers are visibly distinct, gate labels are
+  legible, and the horizontal scroll reaches every pier tip including the
+  loop-back stub.
+- Confirm every pin (38 places) lands on/near its intended pier and remains
+  tappable at ≥44×44pt — pay particular attention to the longer piers (B,
+  F) where pins sit closer together.
 - Confirm the "Take me there" highlight ring, filters, and the place card
-  still work unchanged for a sample of old and new places.
+  still work unchanged for a sample of old and new places across multiple
+  terminals.
 - Confirm VoiceOver reads the new caption and gate labels sensibly (no
-  decorative SVG text exposed as unlabeled images).
+  decorative SVG text exposed as unlabeled images), and that the optional
+  "jump to" chips (if built) are reachable and labeled.
 
 ## 7. Explicitly out of scope
 
 - Real architectural accuracy beyond what's described in §2 — this is a
-  stylized schematic, not a blueprint.
-- Retail shops and membership lounges (§2).
-- Any change to Home's `MapPreview`, the quiet-spot rule's logic, or gate
-  data outside `area-b`/`area-c`.
+  stylized, unrolled schematic, not a blueprint, and does not attempt a true
+  circular/horseshoe geometry.
+- Retail shops and membership lounges everywhere (§2).
+- New `checkpointLanes` entries, arrival-time/itinerary logic, or any change
+  to the quiet-spot recommendation rule's behavior for terminals other than
+  1 — this spec only adds data and drawing, not new rules logic.
+- Any change to Home's `MapPreview`.
 - A second airport (unrelated, already tracked as a separate stretch item in
   CLAUDE.md §9).
