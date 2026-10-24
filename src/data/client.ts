@@ -1,6 +1,6 @@
 import { sampleFlight, sampleFlightAfterGateChange } from '@/data/mock/flight';
 import { sfoAirport } from '@/data/mock/sfo';
-import type { Airport, FlightLookup, Step, StepPhase } from '@/data/types';
+import type { Airport, FlightLookup, Place, Step, StepPhase } from '@/data/types';
 
 /**
  * Single module boundary for airport/flight data. Every call here currently
@@ -12,17 +12,59 @@ const airportsByCode: Record<string, Airport> = {
   SFO: sfoAirport,
 };
 
+/** Schematic position of the "You" marker, shared by the dashboard preview and the map. */
+export const YOU_POSITION = { x: 0.45, y: 0.7 };
+
+/**
+ * Rough walk-time estimate from schematic distance. Not a measured value —
+ * always label it as an estimate in the UI. See CLAUDE.md §4.
+ */
+export function estimateWalkMinutes(
+  from: { x: number; y: number },
+  to: { x: number; y: number },
+): number {
+  const distance = Math.hypot(to.x - from.x, to.y - from.y);
+  return Math.max(1, Math.round(distance * 18));
+}
+
+/**
+ * The quiet-spot rule from CLAUDE.md §4: filter places down to quiet spots,
+ * then pick the one nearest the new gate's boarding area. No model decides
+ * this — it is a plain nearest-neighbor lookup over the gate-to-area table.
+ */
+export function getNearestQuietPlace(airport: Airport, gate: string): Place | null {
+  const quietPlaces = airport.places.filter((place) => place.type === 'quiet');
+  if (quietPlaces.length === 0) return null;
+
+  const areaId = airport.gateAreas[gate];
+  const center = areaId ? airport.areaCenters[areaId] : undefined;
+  if (!center) return quietPlaces[0];
+
+  return quietPlaces.reduce((nearest, place) =>
+    estimateWalkMinutes(center, place) < estimateWalkMinutes(center, nearest) ? place : nearest,
+  );
+}
+
 export async function getAirport(code: string): Promise<Airport | null> {
   return airportsByCode[code] ?? null;
 }
 
-export async function getFlightStatus(flightNumber: string): Promise<FlightLookup | null> {
-  return sampleFlight.flight === flightNumber ? sampleFlight : null;
+/**
+ * The real SFO Flight and Reference Data API looks up a flight by airline
+ * code, flight number AND a date range (CLAUDE.md §6) — a flight number
+ * alone isn't enough to find a specific flight. `date` is a YYYY-MM-DD string.
+ */
+export async function getFlightStatus(flightNumber: string, date: string): Promise<FlightLookup | null> {
+  return matchesFlight(sampleFlight, flightNumber, date) ? sampleFlight : null;
 }
 
 /** Returns the flight's state after the labeled, simulated gate change. */
-export async function simulateGateChange(flightNumber: string): Promise<FlightLookup | null> {
-  return sampleFlightAfterGateChange.flight === flightNumber ? sampleFlightAfterGateChange : null;
+export async function simulateGateChange(flightNumber: string, date: string): Promise<FlightLookup | null> {
+  return matchesFlight(sampleFlightAfterGateChange, flightNumber, date) ? sampleFlightAfterGateChange : null;
+}
+
+function matchesFlight(flight: FlightLookup, flightNumber: string, date: string): boolean {
+  return flight.flight === flightNumber && flight.scheduledDeparture.startsWith(date);
 }
 
 export async function getSteps(airportCode: string, phase: StepPhase): Promise<Step[]> {

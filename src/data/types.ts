@@ -48,6 +48,8 @@ export interface Airport {
   places: Place[];
   /** Gate -> boarding area id, used by the quiet-spot rule. */
   gateAreas: Record<string, string>;
+  /** Boarding area id -> approximate schematic position, used to find the nearest quiet spot. */
+  areaCenters: Record<string, { x: number; y: number }>;
   steps: Step[];
 }
 

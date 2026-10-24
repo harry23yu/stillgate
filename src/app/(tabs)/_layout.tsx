@@ -1,27 +1,50 @@
-import { NativeTabs } from 'expo-router/native-tabs';
+import { Tabs } from 'expo-router';
 
+import { IconSymbol } from '@/components/icon-symbol';
+import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 
 export default function TabLayout() {
   return (
-    <NativeTabs
-      backgroundColor={Colors.surface}
-      indicatorColor={Colors.primaryLight}
-      labelStyle={{ selected: { color: Colors.primary } }}>
-      <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="map">
-        <NativeTabs.Trigger.Label>Map</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'map', selected: 'map.fill' }} />
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="calm-guide">
-        <NativeTabs.Trigger.Label>Calm Guide</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf={{ default: 'waveform', selected: 'waveform.circle.fill' }} />
-      </NativeTabs.Trigger>
-    </NativeTabs>
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: Colors.primary,
+        tabBarInactiveTintColor: Colors.textSecondary,
+        tabBarStyle: {
+          backgroundColor: Colors.surface,
+          borderTopColor: Colors.neutralFillAlt,
+          borderTopWidth: 1,
+          elevation: 0,
+          shadowOpacity: 0,
+        },
+        tabBarLabel: ({ color, children }) => (
+          <ThemedText type="small" style={{ color }}>
+            {children}
+          </ThemedText>
+        ),
+      }}>
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color }) => <IconSymbol name="house.fill" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="map"
+        options={{
+          title: 'Map',
+          tabBarIcon: ({ color }) => <IconSymbol name="map.fill" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="calm-guide"
+        options={{
+          title: 'Calm Guide',
+          tabBarIcon: ({ color }) => <IconSymbol name="waveform.circle.fill" size={24} color={color} />,
+        }}
+      />
+    </Tabs>
   );
 }

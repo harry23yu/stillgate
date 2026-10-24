@@ -1,5 +1,5 @@
-import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -9,36 +9,43 @@ import { IconSymbol } from '@/components/icon-symbol';
 import { Pill } from '@/components/pill';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, Colors, Spacing } from '@/constants/theme';
+import { Colors, Spacing } from '@/constants/theme';
 import { getAirport, getFlightStatus, getSteps } from '@/data/client';
+import { getSavedFlight } from '@/data/saved-flight';
 import type { Airport, FlightLookup, Place, Step } from '@/data/types';
-import { formatDateHeader, formatTime } from '@/lib/format';
-
-const PHASE_LABEL: Record<Step['phase'], string> = {
-  'check-in': 'Check in',
-  security: 'Go through security',
-  boarding: 'Head to your gate',
-  'gate-change': 'Handle the gate change',
-};
-
-const STATUS_LABEL: Record<FlightLookup['status'], string> = {
-  'on-time': 'On time',
-  delayed: 'Delayed',
-  boarding: 'Boarding',
-  'gate-changed': 'Gate changed',
-  cancelled: 'Cancelled',
-};
+import { FLIGHT_STATUS_LABEL, formatDateHeader, formatTime, STEP_PHASE_LABEL } from '@/lib/format';
 
 export default function HomeScreen() {
   const [airport, setAirport] = useState<Airport | null>(null);
   const [flight, setFlight] = useState<FlightLookup | null>(null);
+  const [flightDate, setFlightDate] = useState<string | null>(null);
+  const [unmatchedFlightNumber, setUnmatchedFlightNumber] = useState<string | null>(null);
   const [steps, setSteps] = useState<Step[]>([]);
 
-  useEffect(() => {
-    getAirport('SFO').then(setAirport);
-    getFlightStatus('AA 1623').then(setFlight);
-    getSteps('SFO', 'security').then(setSteps);
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      getAirport('SFO').then(setAirport);
+      getSteps('SFO', 'security').then(setSteps);
+      getSavedFlight().then(async (saved) => {
+        if (!saved) {
+          setFlight(null);
+          setFlightDate(null);
+          setUnmatchedFlightNumber(null);
+          return;
+        }
+        const result = await getFlightStatus(saved.flightNumber, saved.date);
+        if (result) {
+          setFlight(result);
+          setFlightDate(saved.date);
+          setUnmatchedFlightNumber(null);
+        } else {
+          setFlight(null);
+          setFlightDate(null);
+          setUnmatchedFlightNumber(saved.flightNumber);
+        }
+      });
+    }, []),
+  );
 
   const quietPlaces = airport?.places.filter((place) => place.type === 'quiet') ?? [];
   const nextStep = steps[0];
@@ -64,15 +71,20 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
-          {flight && (
+          {flight ? (
             <Card>
               <View style={styles.rowBetween}>
-                <View style={styles.rowCenter}>
+                <Pressable
+                  onPress={() => router.push('/flight-lookup')}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Edit flight, currently ${flight.flight}`}
+                  style={styles.rowCenter}
+                  hitSlop={8}>
                   <IconSymbol name="airplane" size={16} color={Colors.primary} />
                   <ThemedText type="smallBold">{flight.flight}</ThemedText>
-                </View>
+                </Pressable>
                 <Pill variant={flight.status === 'gate-changed' ? 'estimate' : 'success'}>
-                  {STATUS_LABEL[flight.status]}
+                  {FLIGHT_STATUS_LABEL[flight.status]}
                 </Pill>
               </View>
 
@@ -101,7 +113,12 @@ export default function HomeScreen() {
               </View>
 
               <Pressable
-                onPress={() => router.push('/gate-change')}
+                onPress={() =>
+                  router.push({
+                    pathname: '/gate-change',
+                    params: { flight: flight.flight, date: flightDate ?? undefined },
+                  })
+                }
                 accessibilityRole="button"
                 accessibilityLabel="Simulate a gate change, live demo"
                 style={styles.simulateButton}>
@@ -114,6 +131,29 @@ export default function HomeScreen() {
                 </ThemedText>
               </Pressable>
             </Card>
+          ) : (
+            <Card>
+              {unmatchedFlightNumber ? (
+                <>
+                  <ThemedText type="smallBold">We couldn&apos;t find {unmatchedFlightNumber}</ThemedText>
+                  <ThemedText themeColor="textSecondary">
+                    This demo only recognizes one sample flight. Try editing your flight or use the demo
+                    flight instead.
+                  </ThemedText>
+                </>
+              ) : (
+                <>
+                  <ThemedText type="smallBold">Add your flight</ThemedText>
+                  <ThemedText themeColor="textSecondary">
+                    Enter your flight number to see its status here.
+                  </ThemedText>
+                </>
+              )}
+              <Button
+                label={unmatchedFlightNumber ? 'Edit flight' : 'Add your flight'}
+                onPress={() => router.push('/flight-lookup')}
+              />
+            </Card>
           )}
 
           <View style={styles.sectionHeader}>
@@ -125,7 +165,7 @@ export default function HomeScreen() {
 
           {nextStep && (
             <>
-              <ThemedText type="subtitle">{PHASE_LABEL[nextStep.phase]}</ThemedText>
+              <ThemedText type="subtitle">{STEP_PHASE_LABEL[nextStep.phase]}</ThemedText>
               <Card style={styles.stepRow}>
                 <View style={styles.stepIcon}>
                   <IconSymbol name="arrow.right" size={18} color={Colors.surface} />
@@ -222,7 +262,7 @@ const styles = StyleSheet.create({
   content: {
     padding: Spacing.four,
     gap: Spacing.three,
-    paddingBottom: Spacing.six + BottomTabInset,
+    paddingBottom: Spacing.six,
   },
   header: {
     flexDirection: 'row',

@@ -37,6 +37,7 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="gate-change" options={{ presentation: 'card' }} />
         <Stack.Screen name="profile" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="flight-lookup" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>
   );

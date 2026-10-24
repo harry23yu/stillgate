@@ -110,6 +110,9 @@ export const sfoAirport: Airport = {
     C8: 'area-c',
     C9: 'area-c',
   },
+  areaCenters: {
+    'area-c': { x: 0.74, y: 0.36 },
+  },
   steps: [
     {
       id: 'checkin-1',
