@@ -18,7 +18,12 @@ function requireReviewer(reviewKey: string) {
 }
 
 /** A reviewer decision answers every open review reason at once. */
-const CLEARED_FLAGS = { missingFromSource: undefined, sourceChanged: undefined, reverifyDue: undefined };
+const CLEARED_FLAGS = {
+  missingFromSource: undefined,
+  sourceChanged: undefined,
+  reverifyDue: undefined,
+  travelerReported: undefined,
+};
 
 export interface Suggestion {
   terminal: string | null;
