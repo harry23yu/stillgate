@@ -1,8 +1,9 @@
 # Stillgate
+Airports can be loud, crowded, and unpredictable, which can make travel harder for neurodivergent and sensory-sensitive people. A 2025 research study from Trinity college with a sample of over 300 families found that for most people, stress drops after security, but for neuro divergent travelers, it stays high the whole trip. Some airports have sensory rooms and support programs, but they’re scattered. Skillgate aims to fill that gap. Ultimate goal is one website and one app for every airport. That’s the gap Stillgates fills.
 
-Stillgate is a sensory-aware airport companion designed first for autistic and other neurodivergent travelers. It helps travelers prepare for an airport visit, find sensory-relevant places and services, and follow calm, step-by-step trip guidance.
+Stillgate is a sensory-aware airport companion designed for autistic and other neurodivergent travelers. It helps travelers prepare for an airport visit, find sensory-relevant places and services, and follow calm, step-by-step trip guidance.
 
-This is a hackathon prototype, not an airline or airport-operated service. Flight examples and gate changes may be simulated. Check the labels and source/verification details in the app; walking times and some airport information are estimates or sample data.
+This is a hackathon prototype, not an airline or airport-operated service. Flight examples and gate changes are simulated. Check the labels and source/verification details in the app; walking times and some airport information are estimates or sample data.
 
 ## What the prototype does
 
@@ -99,7 +100,7 @@ stillgate/
 └── README.md
 ```
 
-The private `.env` files, generated audio, and installed dependencies are intentionally not shown. Never commit API keys or other secrets.
+
 
 ## Data, privacy and prototype boundaries
 
@@ -110,6 +111,4 @@ The private `.env` files, generated audio, and installed dependencies are intent
 - The prototype should not be treated as emergency, security, visa, or official airport advice. Follow airport, airline and government instructions.
 - Before a public launch, review access controls, rate limits, data verification, moderation, and third-party API costs. Current public demo actions may need additional protections.
 
-## Product direction
 
-The longer-term goal is one sensory profile and a consistent, calm travel guide across more airports. The prototype demonstrates the core flow at a small scale; broader verified airport coverage, measured navigation data and production-grade live integrations require further work and validation with neurodivergent travelers.
