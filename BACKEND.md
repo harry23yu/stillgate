@@ -110,7 +110,7 @@ to 300 characters) and `detailLevel` (`brief`, `standard` or `detailed`). Return
 `{ steps, rewritten, reason }`.
 
 - Build the step text from the data in code (gate, place name, minutes, hours), then call this to soften it.
-- Every number and gate token in each step must survive the rewrite, or the original text is returned.
+- Every number and gate token in each step must survive the rewrite, and so must caveat words ("estimate", "verified", "unknown"), or the original text is returned.
 - On any failure (no key, API error, refusal, bad output, failed check) you get the original steps back with
   `rewritten: false` and a `reason`. Always show `steps`; use `rewritten` only for debugging.
 - Needs `ANTHROPIC_API_KEY` on the deployment (`npx convex env set ANTHROPIC_API_KEY <key>`).

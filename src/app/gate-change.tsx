@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useQuery } from 'convex/react';
+import { useAction, useQuery } from 'convex/react';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -231,6 +231,30 @@ function LiveQuietSpotRecommendation({
     },
   });
 
+  // Claude only softens the wording of steps our data already produced (convex/phrase.ts). Facts
+  // are checked server-side; if anything fails we keep showing the original steps.
+  const phraseSteps = useAction(api.phrase.phraseSteps);
+  const shownSteps = result?.steps.slice(1) ?? [];
+  const stepsKey = JSON.stringify(shownSteps);
+  const [reworded, setReworded] = useState<{ key: string; steps: string[] } | null>(null);
+
+  useEffect(() => {
+    const steps = JSON.parse(stepsKey) as string[];
+    if (steps.length === 0) return;
+    let active = true;
+    phraseSteps({ steps, detailLevel: profile.detailLevel })
+      .then((out) => {
+        if (active && out.rewritten) setReworded({ key: stepsKey, steps: out.steps });
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [stepsKey, profile.detailLevel, phraseSteps]);
+
+  const isReworded = reworded?.key === stepsKey;
+  const displaySteps = isReworded ? reworded.steps : shownSteps;
+
   if (!result?.spot) {
     return fallbackPlace ? (
       <QuietSpotCard
@@ -248,9 +272,14 @@ function LiveQuietSpotRecommendation({
         Picked for your profile
       </ThemedText>
       <ThemedText type="subtitle">{result.spot.name}</ThemedText>
-      {result.steps.slice(1).map((step) => (
+      {displaySteps.map((step) => (
         <ThemedText key={step} themeColor="textSecondary">{step}</ThemedText>
       ))}
+      {isReworded && (
+        <ThemedText type="small" themeColor="textSecondary">
+          Wording softened by Claude. The facts come from our airport data.
+        </ThemedText>
+      )}
       <Button
         label="Take me to the quiet spot"
         variant="secondary"
