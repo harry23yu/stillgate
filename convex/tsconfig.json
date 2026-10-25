@@ -18,7 +18,10 @@
     "forceConsistentCasingInFileNames": true,
     "module": "ESNext",
     "isolatedModules": true,
-    "noEmit": true
+    "noEmit": true,
+
+    /* Stillgate: seed.ts imports the app's mock airports, which use the app's "@/" alias. */
+    "paths": { "@/*": ["../src/*"] }
   },
   "include": ["./**/*"],
   "exclude": ["./_generated"]

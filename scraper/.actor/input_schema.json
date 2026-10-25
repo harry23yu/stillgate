@@ -1,0 +1,37 @@
+{
+  "title": "Stillgate accessibility scraper input",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "sources": {
+      "title": "Sources",
+      "type": "array",
+      "description": "Official airport accessibility pages. Each item is { \"airportCode\": \"SFO\", \"url\": \"https://...\" }.",
+      "editor": "json",
+      "prefill": [
+        { "airportCode": "SFO", "url": "https://fly.sfo.gov/node/15563" },
+        { "airportCode": "CHS", "url": "https://www.iflychs.com/Accessibility" }
+      ]
+    },
+    "useBrowser": {
+      "title": "Use a real browser",
+      "type": "boolean",
+      "description": "Crawl with Playwright instead of plain HTTP. Turn on for sites that block simple requests (CHS returned 403).",
+      "default": false
+    },
+    "ingestUrl": {
+      "title": "Convex ingest URL",
+      "type": "string",
+      "description": "https://<deployment>.convex.site/ingest. Leave empty to only write the Apify dataset.",
+      "editor": "textfield"
+    },
+    "ingestSecret": {
+      "title": "Ingest secret",
+      "type": "string",
+      "description": "Must match INGEST_SECRET in the Convex deployment environment.",
+      "editor": "textfield",
+      "isSecret": true
+    }
+  },
+  "required": ["sources"]
+}

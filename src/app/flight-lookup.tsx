@@ -1,6 +1,6 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
@@ -11,12 +11,14 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { getFlightStatus } from '@/data/client';
+import { getFlightStatus, getSupportedAirportCode, prefetchAirport } from '@/data/client';
 import { lookupFlight, type FlightLookupResult } from '@/data/flight-provider';
 import { sampleChsFlight, sampleDcaFlight, sampleFlight } from '@/data/mock/flight';
 import { clearSavedFlight, getSavedFlights, saveFlight, type SavedFlight } from '@/data/saved-flight';
 import type { FlightLookup } from '@/data/types';
 import { formatTime } from '@/lib/format';
+import { goBackOrHome } from '@/lib/navigation';
+import { confirmAction } from '@/lib/notify';
 
 const DEMO_FLIGHTS = [sampleFlight, sampleChsFlight, sampleDcaFlight];
 
@@ -124,22 +126,28 @@ export default function FlightLookupScreen() {
         originCode: flight.origin.code,
         lookup: flight,
       });
+      // Save both airports' reviewed places now, while Wi-Fi is likely good,
+      // so the map works offline at the airport. Fire-and-forget.
+      for (const code of [flight.origin.code, flight.destination?.code]) {
+        const supported = getSupportedAirportCode(code);
+        if (supported) void prefetchAirport(supported);
+      }
       setHasSavedFlight(true);
-      router.back();
+      goBackOrHome();
     } catch {
       setError('We couldn’t save this flight on your device. Please try again.');
     }
   }
 
   function confirmRemoveFlight() {
-    Alert.alert(
-      'Remove saved flight?',
-      'Your flight details will be removed from this device.',
-      [
-        { text: 'Keep flight', style: 'cancel' },
-        { text: 'Remove flight', style: 'destructive', onPress: () => void removeSavedFlight() },
-      ],
-    );
+    confirmAction({
+      title: 'Remove saved flight?',
+      message: 'Your flight details will be removed from this device.',
+      cancelLabel: 'Keep flight',
+      confirmLabel: 'Remove flight',
+      destructive: true,
+      onConfirm: () => void removeSavedFlight(),
+    });
   }
 
   async function removeSavedFlight() {
@@ -151,7 +159,7 @@ export default function FlightLookupScreen() {
       setOriginCode('');
       setDate('');
       setLookupResult(null);
-      router.back();
+      goBackOrHome();
     } catch {
       setError('We couldn’t remove the saved flight. Please try again.');
     }
@@ -172,7 +180,7 @@ export default function FlightLookupScreen() {
           <View style={styles.header}>
             <ThemedText type="title">{addingFlight ? 'Add a flight' : 'Your flight'}</ThemedText>
             <Pressable
-              onPress={() => router.back()}
+              onPress={goBackOrHome}
               accessibilityRole="button"
               accessibilityLabel="Skip for now"
               hitSlop={12}

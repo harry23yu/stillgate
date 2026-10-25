@@ -62,4 +62,39 @@ http.route({
   }),
 });
 
+// POST /ingest
+// Called by the accessibility scraper Actor at the end of each run (scraper/src/main.ts).
+// Header: Authorization: Bearer <INGEST_SECRET>
+// Body: { pages: ScrapedPage[], failures: FailedPage[] }. Creates/updates draft places for review;
+// nothing reaches travelers until a reviewer approves it (convex/review.ts).
+http.route({
+  path: "/ingest",
+  method: "POST",
+  handler: httpAction(async (ctx, req) => {
+    const secret = env.INGEST_SECRET;
+    if (!secret) return json({ error: "Ingest is disabled: INGEST_SECRET is not set." }, 503);
+    const sent = req.headers.get("authorization") ?? "";
+    if (!safeEqual(sent, `Bearer ${secret}`)) return json({ error: "Unauthorized." }, 401);
+
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return json({ error: "Body must be valid JSON." }, 400);
+    }
+
+    try {
+      // The internal mutation's validators check the payload shape.
+      const summary = await ctx.runMutation(
+        internal.ingest.ingestPages,
+        body as (typeof internal.ingest.ingestPages)["_args"],
+      );
+      return json(summary, 200);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      return json({ error: "Ingest rejected.", detail: message.slice(0, 500) }, 400);
+    }
+  }),
+});
+
 export default http;

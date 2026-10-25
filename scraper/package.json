@@ -1,0 +1,22 @@
+{
+  "name": "stillgate-accessibility-scraper",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Apify Actor: official airport accessibility pages -> draft Stillgate places",
+  "scripts": {
+    "start": "node dist/main.js",
+    "build": "tsc",
+    "dev": "tsc && apify run",
+    "test": "tsc && node --test dist/extract.test.js"
+  },
+  "dependencies": {
+    "apify": "^3.7.2",
+    "crawlee": "^3.18.2",
+    "playwright": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "~6.0.3"
+  }
+}
