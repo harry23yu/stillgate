@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from 'convex/react';
 import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { api } from '../../convex/_generated/api';
 import { Button } from '@/components/button';
@@ -11,6 +11,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Spacing } from '@/constants/theme';
 import type { AirportCode } from '@/data/types';
 import { formatDateTime } from '@/lib/format';
+import { notify } from '@/lib/notify';
 
 const HEALTH_LABEL = { ok: 'OK', stale: 'Not crawled recently', error: 'Last crawl failed' } as const;
 
@@ -24,9 +25,9 @@ export function SourceHealth({ reviewKey, airportCode }: { reviewKey: string; ai
     setStarting(true);
     try {
       await runScrapeNow({ reviewKey });
-      Alert.alert('Scrape requested', 'New results show up here once the Apify run finishes, usually within a few minutes.');
+      notify('Scrape requested', 'New results show up here once the Apify run finishes, usually within a few minutes.');
     } catch (error) {
-      Alert.alert('Could not start scrape', (error as Error).message);
+      notify('Could not start scrape', (error as Error).message);
     } finally {
       setStarting(false);
     }

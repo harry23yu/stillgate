@@ -10,6 +10,7 @@
 
 import type * as airports from "../airports.js";
 import type * as crons from "../crons.js";
+import type * as flights from "../flights.js";
 import type * as http from "../http.js";
 import type * as ingest from "../ingest.js";
 import type * as maintenance from "../maintenance.js";
@@ -26,6 +27,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   airports: typeof airports;
   crons: typeof crons;
+  flights: typeof flights;
   http: typeof http;
   ingest: typeof ingest;
   maintenance: typeof maintenance;

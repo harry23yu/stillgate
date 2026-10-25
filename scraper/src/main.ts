@@ -126,14 +126,24 @@ const crawler = input.useBrowser
 await crawler.run(requests);
 
 if (input.ingestUrl) {
-  const response = await fetch(input.ingestUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${input.ingestSecret ?? ''}`,
-    },
-    body: JSON.stringify({ pages, failures }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(input.ingestUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${input.ingestSecret ?? ''}`,
+      },
+      body: JSON.stringify({ pages, failures }),
+    });
+  } catch (error) {
+    // Usually a local `npx convex dev` that isn't running. Scraped pages are
+    // already in the dataset, so say so instead of dumping a socket stack trace.
+    throw new Error(
+      `Could not reach ${input.ingestUrl} (${(error as Error & { cause?: Error }).cause?.message ?? (error as Error).message}). ` +
+        'Is the Convex backend running? Scraped results are saved in the dataset.',
+    );
+  }
   const body = await response.text();
   if (!response.ok) {
     // Fail the run so the Apify console shows it instead of silently dropping data.

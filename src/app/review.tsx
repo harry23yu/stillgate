@@ -46,6 +46,10 @@ export default function ReviewScreen() {
             </Card>
           ) : !reviewKey ? (
             <Card>
+              <ThemedText type="small" themeColor="textSecondary">
+                The review key is the password set with `npx convex env set REVIEW_KEY …` (not an airport code). You
+                choose the airport on the next screen.
+              </ThemedText>
               <TextField label="Review key" value={keyInput} onChangeText={setKeyInput} autoCapitalize="none" />
               <Button label="Open queue" onPress={() => setReviewKey(keyInput.trim())} disabled={!keyInput.trim()} />
             </Card>

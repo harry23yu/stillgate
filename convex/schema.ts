@@ -36,6 +36,28 @@ export const publishedFields = v.object({
   confidence,
 });
 
+const airportRef = v.object({ code: v.string(), city: v.string() });
+
+/** Mirrors `FlightLookup` in src/data/types.ts. */
+export const flightValidator = v.object({
+  flight: v.string(),
+  status: v.union(
+    v.literal('on-time'),
+    v.literal('delayed'),
+    v.literal('boarding'),
+    v.literal('gate-changed'),
+    v.literal('cancelled'),
+    v.literal('unknown'),
+  ),
+  scheduledDeparture: v.string(),
+  gate: v.union(v.string(), v.null()),
+  terminal: v.union(v.string(), v.null()),
+  retrievedAt: v.string(),
+  isRecorded: v.boolean(),
+  origin: airportRef,
+  destination: v.union(airportRef, v.null()),
+});
+
 export default defineSchema({
   sources: defineTable({
     airportCode: v.string(),
@@ -90,6 +112,20 @@ export default defineSchema({
     apifyRunId: v.optional(v.string()),
     error: v.optional(v.string()),
   }),
+
+  /**
+   * Short-lived cache of live flight lookups (flights.ts), so repeated
+   * searches don't each start a paid Apify run, and so a changed gate can be
+   * noticed by comparing with the previous lookup.
+   */
+  flightLookups: defineTable({
+    /** `${flightCode}|${date}|${originCode}`, e.g. "UA1|2026-10-24|SFO". */
+    key: v.string(),
+    fetchedAt: v.number(),
+    flight: v.union(flightValidator, v.null()),
+    /** Gate from the lookup before this one, kept to detect gate changes. */
+    previousGate: v.optional(v.union(v.string(), v.null())),
+  }).index('by_key', ['key']),
 
   /** Hand-maintained map metadata (not scraped). Seeded from src/data/mock via `seed:airports`. */
   airports: defineTable({

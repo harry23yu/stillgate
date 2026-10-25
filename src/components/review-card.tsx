@@ -2,7 +2,7 @@ import { useMutation } from 'convex/react';
 import type { FunctionReturnType } from 'convex/server';
 import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { api } from '../../convex/_generated/api';
 import { Button } from '@/components/button';
@@ -12,6 +12,7 @@ import { Pill } from '@/components/pill';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { Colors, Spacing } from '@/constants/theme';
+import { notify } from '@/lib/notify';
 import type { Confidence, PlaceType } from '@/data/types';
 
 type Queue = FunctionReturnType<typeof api.review.queue>;
@@ -57,7 +58,7 @@ export function ReviewCard({ place, terminals, reviewKey }: ReviewCardProps) {
     try {
       await action();
     } catch (error) {
-      Alert.alert('Could not save', (error as Error).message);
+      notify('Could not save', (error as Error).message);
     } finally {
       setSaving(false);
     }
@@ -66,9 +67,9 @@ export function ReviewCard({ place, terminals, reviewKey }: ReviewCardProps) {
   function handleApprove(splitOff: boolean) {
     const xValue = Number(x);
     const yValue = Number(y);
-    if (!terminal) return Alert.alert('Pick a terminal', 'Choose which terminal this place is in.');
+    if (!terminal) return notify('Pick a terminal', 'Choose which terminal this place is in.');
     if (x.trim() === '' || y.trim() === '' || !isFraction(xValue) || !isFraction(yValue)) {
-      return Alert.alert('Place it on the map', 'x and y must be numbers between 0 and 1 across the floor plan.');
+      return notify('Place it on the map', 'x and y must be numbers between 0 and 1 across the floor plan.');
     }
     void run(() =>
       approve({
