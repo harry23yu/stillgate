@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
@@ -21,6 +21,8 @@ import {
 import { sampleFlight } from '@/data/mock/flight';
 import type { Airport, FlightLookup, Place } from '@/data/types';
 import { FLIGHT_STATUS_LABEL, formatTime } from '@/lib/format';
+import { goBackOrHome } from '@/lib/navigation';
+import { notify } from '@/lib/notify';
 
 const DEMO_FLIGHT_NUMBER = sampleFlight.flight;
 const DEMO_FLIGHT_DATE = sampleFlight.scheduledDeparture.slice(0, 10);
@@ -75,7 +77,7 @@ export default function GateChangeScreen() {
     const location = originCode === 'CHS'
       ? `Concourse ${newGate.charAt(0)} at Charleston International Airport`
       : 'the International Terminal at SFO';
-    Alert.alert(
+    notify(
       `Gate ${newGate}`,
       `Gate ${newGate} is in ${location}. Turn-by-turn directions are not part of this demo — use the map to see the area.`,
     );
@@ -92,7 +94,7 @@ export default function GateChangeScreen() {
             </ThemedText>
           </View>
           <Pressable
-            onPress={() => router.back()}
+            onPress={goBackOrHome}
             accessibilityRole="button"
             accessibilityLabel="Close"
             hitSlop={12}
@@ -156,7 +158,7 @@ export default function GateChangeScreen() {
               <Button label="Take me to the quiet spot" onPress={() => handleTakeMeToQuietSpot(quietPlace)} />
             )}
             <Button label="Show the way to the new gate" variant="secondary" onPress={handleShowWayToGate} />
-            <Button label="Not now" variant="ghost" onPress={() => router.back()} />
+            <Button label="Not now" variant="ghost" onPress={goBackOrHome} />
           </View>
 
           <View style={styles.divider} />

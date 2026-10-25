@@ -1,5 +1,5 @@
 import { useQuery } from 'convex/react';
-import { router, type ErrorBoundaryProps } from 'expo-router';
+import { type ErrorBoundaryProps } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -16,6 +16,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import type { AirportCode } from '@/data/types';
 import { convex } from '@/lib/convex';
+import { goBackOrHome } from '@/lib/navigation';
 
 /**
  * Internal reviewer screen (not linked from the traveler UI; open /review).
@@ -110,7 +111,7 @@ function Header() {
   return (
     <View style={styles.header}>
       <Pressable
-        onPress={() => router.back()}
+        onPress={goBackOrHome}
         accessibilityRole="button"
         accessibilityLabel="Close"
         hitSlop={12}>

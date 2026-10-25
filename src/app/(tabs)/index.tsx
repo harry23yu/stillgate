@@ -11,9 +11,10 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Spacing } from '@/constants/theme';
 import { getFlightStatus, getSupportedAirportCode } from '@/data/client';
-import { getSavedFlight } from '@/data/saved-flight';
+import { clearSavedFlight, getSavedFlight } from '@/data/saved-flight';
 import type { FlightLookup } from '@/data/types';
 import { FLIGHT_STATUS_LABEL, formatDateHeader, formatTime } from '@/lib/format';
+import { confirmAction, notify } from '@/lib/notify';
 
 export default function HomeScreen() {
   const [flight, setFlight] = useState<FlightLookup | null>(null);
@@ -44,6 +45,28 @@ export default function HomeScreen() {
       });
     }, []),
   );
+
+  function confirmRemoveFlight() {
+    confirmAction({
+      title: 'Remove saved flight?',
+      message: 'Your flight details will be removed from this device.',
+      cancelLabel: 'Keep flight',
+      confirmLabel: 'Remove flight',
+      destructive: true,
+      onConfirm: () => void removeFlight(),
+    });
+  }
+
+  async function removeFlight() {
+    try {
+      await clearSavedFlight();
+      setFlight(null);
+      setFlightDate(null);
+      setUnmatchedFlightNumber(null);
+    } catch {
+      notify('Couldn’t remove the flight', 'Please try again.');
+    }
+  }
 
   return (
     <ThemedView style={styles.container}>
@@ -128,6 +151,8 @@ export default function HomeScreen() {
                 </ThemedText>
                 </Pressable>
               )}
+
+              <Button label="Remove flight" variant="ghost" onPress={confirmRemoveFlight} />
             </Card>
           ) : (
             <Card>
@@ -151,6 +176,9 @@ export default function HomeScreen() {
                 label={unmatchedFlightNumber ? 'Edit flight' : 'Add your flight'}
                 onPress={() => router.push('/flight-lookup')}
               />
+              {unmatchedFlightNumber && (
+                <Button label="Remove flight" variant="ghost" onPress={confirmRemoveFlight} />
+              )}
             </Card>
           )}
 

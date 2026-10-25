@@ -10,6 +10,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Colors, Spacing } from '@/constants/theme';
 import { defaultProfile, getProfile, saveProfile } from '@/data/profile';
 import type { Profile } from '@/data/types';
+import { goBackOrHome } from '@/lib/navigation';
 
 type SensitivityLevel = NonNullable<Profile['noise']>;
 
@@ -60,7 +61,7 @@ export default function ProfileScreen() {
         <View style={styles.header}>
           <ThemedText type="title">Your sensory profile</ThemedText>
           <Pressable
-            onPress={() => router.back()}
+            onPress={goBackOrHome}
             accessibilityRole="button"
             accessibilityLabel="Save sensory profile"
             hitSlop={12}

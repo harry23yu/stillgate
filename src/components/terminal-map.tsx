@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, View, type ImageSourcePropType, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, View, type ImageSourcePropType, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
@@ -12,6 +12,7 @@ import { estimateWalkMinutes, getAirport, YOU_POSITION } from '@/data/client';
 import type { Airport, AirportCode, FlightLookup, Place, PlaceType } from '@/data/types';
 import { formatDateTime } from '@/lib/format';
 import { focusForGate, mapPointForGate, mapPointForPlace, MAP_IMAGE_SIZE, type AirportMapFocus, type MapPoint } from '@/lib/sfo-map-layout';
+import { notify } from '@/lib/notify';
 
 const FILTERS: { type: PlaceType; label: string }[] = [
   { type: 'quiet', label: 'Quiet spots' },
@@ -224,7 +225,7 @@ export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapPr
   }
 
   function handleReport(place: Place) {
-    Alert.alert(
+    notify(
       'Thanks for the report',
       `This demo does not send reports yet, but in the full app this would flag "${place.name}" for review.`,
     );
