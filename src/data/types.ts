@@ -22,8 +22,6 @@ export interface Place {
   confidence: Confidence;
   lastVerified: string;
   source: string;
-  /** True for places published through the scraper → review pipeline (convex/airports.ts `get`). */
-  reviewed?: boolean;
 }
 
 export interface Terminal {

@@ -64,7 +64,6 @@ export const get = query({
                 ...place.published,
                 lastVerified: place.lastVerified ?? 'unknown',
                 source: place.sourceUrl,
-                reviewed: true,
               },
             ]
           : [],

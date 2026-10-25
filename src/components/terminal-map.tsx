@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState, type ComponentRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery } from 'convex/react';
-import { Image, Platform, Pressable, ScrollView, StyleSheet, View, type ImageSourcePropType, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, View, type ImageSourcePropType, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
 
 import { Button } from '@/components/button';
 import { Card } from '@/components/card';
@@ -15,8 +15,6 @@ import type { Airport, AirportCode, FlightLookup, Place, PlaceType } from '@/dat
 import { formatDateTime } from '@/lib/format';
 import { focusForGate, mapPointForGate, mapPointForPlace, MAP_IMAGE_SIZE, type AirportMapFocus, type MapPoint } from '@/lib/sfo-map-layout';
 import { notify } from '@/lib/notify';
-import { getDeviceId } from '@/data/device-id';
-import { getMyReport, rememberMyReport, type ReportVerdict } from '@/data/my-reports';
 import { api } from '../../convex/_generated/api';
 
 // Live traveler "is this still accurate?" reports are backed by Convex. Only airports seeded into
@@ -26,9 +24,8 @@ const REPORTS_ENABLED_AIRPORTS: AirportCode[] = ['SFO'];
 
 // shared/data/sfo.json seeds spot ids prefixed with the airport code
 // (local "sensory-room-t1" -> seeded "sfo-sensory-room-t1"). Map local -> seeded until the two are unified.
-// Reviewed pipeline places are reported by their Convex document id as-is.
 function convexSpotId(airportCode: AirportCode, place: Place): string {
-  return place.reviewed ? place.id : `${airportCode.toLowerCase()}-${place.id}`;
+  return `${airportCode.toLowerCase()}-${place.id}`;
 }
 
 const FILTERS: { type: PlaceType; label: string }[] = [
@@ -130,16 +127,6 @@ export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapPr
   const verticalScroll = useRef<ScrollViewInstance>(null);
   const scrollOffsets = useRef({ x: 0, y: 0 });
   const previousView = useRef({ focus: mapFocus, zoom });
-
-  // On a laptop-height browser window the details card sits below the fold,
-  // so a pin click looked like it did nothing. Bring the card into view.
-  const detailsEndRef = useRef<ComponentRef<typeof View>>(null);
-  useEffect(() => {
-    if (Platform.OS !== 'web' || (!selectedId && !selectedCluster)) return;
-    const node = detailsEndRef.current as unknown as { scrollIntoView?: (options: object) => void } | null;
-    node?.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
-  }, [selectedId, selectedCluster]);
-
 
   useEffect(() => {
     let active = true;
@@ -491,7 +478,6 @@ export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapPr
           <ThemedText themeColor="textSecondary">Tap a pin or a busy zone to see details.</ThemedText>
         </Card>
       )}
-      <View ref={detailsEndRef} />
     </View>
   );
 }
@@ -677,7 +663,7 @@ function PlaceCard({
         </View>
       )}
       {hasConvex && REPORTS_ENABLED_AIRPORTS.includes(airportCode) ? (
-        <SpotReportSection key={`${airportCode}:${place.id}`} place={place} airportCode={airportCode} />
+        <SpotReportSection place={place} airportCode={airportCode} />
       ) : (
         <>
           <ThemedText type="small" themeColor="textSecondary">
@@ -702,18 +688,6 @@ function SpotReportSection({ place, airportCode }: { place: Place; airportCode: 
   const submitReport = useMutation(api.reports.submitReport);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // This device's answer today, so the same person can't tap the count up.
-  const [myVerdict, setMyVerdict] = useState<ReportVerdict | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    void getMyReport(airportCode, spotId).then((verdict) => {
-      if (active) setMyVerdict(verdict);
-    });
-    return () => {
-      active = false;
-    };
-  }, [airportCode, spotId]);
 
   const accurate = summary?.accurate ?? 0;
   const wrong = summary?.wrong ?? 0;
@@ -721,13 +695,11 @@ function SpotReportSection({ place, airportCode }: { place: Place; airportCode: 
   // Enough recent "wrong" reports, and not outweighed by confirmations: warn the next traveler.
   const flagged = wrong >= 2 && wrong >= accurate;
 
-  async function report(verdict: ReportVerdict) {
+  async function report(verdict: 'accurate' | 'wrong') {
     setPending(true);
     setError(null);
     try {
-      await submitReport({ airportCode, spotId, verdict, deviceId: await getDeviceId() });
-      await rememberMyReport(airportCode, spotId, verdict);
-      setMyVerdict(verdict);
+      await submitReport({ airportCode, spotId, verdict });
     } catch {
       setError('We couldn’t record that just now. Please try again.');
     } finally {
@@ -757,31 +729,11 @@ function SpotReportSection({ place, airportCode }: { place: Place; airportCode: 
         </View>
       )}
 
-      {myVerdict ? (
-        <View style={styles.trustRow}>
-          <ThemedText type="small" themeColor="textSecondary" style={styles.trustText}>
-            {myVerdict === 'accurate'
-              ? 'Thanks — you confirmed this today.'
-              : 'Thanks — you reported a problem today. A reviewer will check it.'}
-          </ThemedText>
-          <Pressable
-            onPress={() => void report(myVerdict === 'accurate' ? 'wrong' : 'accurate')}
-            disabled={pending}
-            accessibilityRole="button"
-            accessibilityLabel={myVerdict === 'accurate' ? 'Change answer to: this was off' : 'Change answer to: still accurate'}
-            hitSlop={8}>
-            <ThemedText type="smallBold" themeColor="primary">Change answer</ThemedText>
-          </Pressable>
-        </View>
-      ) : (
-        <>
-          <ThemedText type="small" themeColor="textSecondary">Is this still right?</ThemedText>
-          <View style={styles.cardActions}>
-            <Button label="Still accurate" variant="secondary" onPress={() => void report('accurate')} disabled={pending} style={styles.cardButton} />
-            <Button label="This was off" variant="secondary" onPress={() => void report('wrong')} disabled={pending} style={styles.cardButton} />
-          </View>
-        </>
-      )}
+      <ThemedText type="small" themeColor="textSecondary">Is this still right?</ThemedText>
+      <View style={styles.cardActions}>
+        <Button label="Still accurate" variant="secondary" onPress={() => void report('accurate')} disabled={pending} style={styles.cardButton} />
+        <Button label="This was off" variant="secondary" onPress={() => void report('wrong')} disabled={pending} style={styles.cardButton} />
+      </View>
       {error && <ThemedText type="small" style={{ color: theme.estimateText }}>{error}</ThemedText>}
     </View>
   );
@@ -838,13 +790,9 @@ const makeStyles = (theme: Palette) => StyleSheet.create({
   schematicCaption: {
     marginTop: Spacing.one,
   },
-  // 44×44 touch target centered on the point (the icon stays 26px). hitSlop
-  // doesn't enlarge the clickable area on web, so the box itself must.
   pin: {
     position: 'absolute',
-    width: 44,
-    height: 44,
-    transform: [{ translateX: -22 }, { translateY: -22 }],
+    transform: [{ translateX: -13 }, { translateY: -13 }],
     alignItems: 'center',
     justifyContent: 'center',
   },
