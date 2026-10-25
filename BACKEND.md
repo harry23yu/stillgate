@@ -159,7 +159,7 @@ All limits are defined in `convex/limits.ts`; there are no accounts, so they are
 | `phraseSteps` | `phrase:phraseSteps` (Claude credits) | 20 per minute, burst of 10. Over the limit it returns the original steps with `reason: "rate limited"`. |
 | `submitReport` | `reports:submitReport`, overall | 60 per minute, burst of 20 |
 | `submitReportPerSpot` | `reports:submitReport`, per pin | 6 per minute, burst of 6 |
-| `synthesizeSpeech` | defined for the Cartesia voice action to use | 30 per minute, burst of 10 |
+| `synthesizeSpeech` | `voice:speak` (Cartesia credits). Only new clips count; replays of saved clips don't. | 30 per minute, burst of 10. Over the limit it returns `unavailable` with "Voice is busy right now". |
 
 - Over the limit, `submitReport` throws a `ConvexError` ("Too many reports ...").
 - The limiter is transactional: a mutation that fails (for example an unknown spot) does not use up tokens.

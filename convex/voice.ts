@@ -3,6 +3,7 @@ import { v } from 'convex/values';
 import { internal } from './_generated/api';
 import type { Id } from './_generated/dataModel';
 import { action, env, internalMutation, internalQuery } from './_generated/server';
+import { rateLimiter } from './limits';
 
 /**
  * Text-to-speech through Cartesia. The Cartesia key stays on the backend; the
@@ -44,6 +45,13 @@ export const speak = action({
 
     const apiKey = env.CARTESIA_API_KEY;
     if (!apiKey) return { kind: 'unavailable', configured: false, message: 'Voice is not set up yet.' };
+
+    // Only clips that need a new Cartesia call count (replays above return before this), so rehearsing
+    // the demo does not use up the limit. See convex/limits.ts.
+    const limit = await rateLimiter.limit(ctx, 'synthesizeSpeech');
+    if (!limit.ok) {
+      return { kind: 'unavailable', configured: true, message: 'Voice is busy right now. Please try again in a moment.' };
+    }
 
     let audio: Blob;
     try {
