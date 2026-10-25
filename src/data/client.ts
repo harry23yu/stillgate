@@ -175,7 +175,8 @@ export async function getFlightStatus(
 
 /** Returns the flight's state after the labeled, simulated gate change. */
 export async function simulateGateChange(flightNumber: string, date: string): Promise<FlightLookup | null> {
-  return sampleFlightsAfterGateChange.find((flight) => matchesFlight(flight, flightNumber, date)) ?? null;
+  const normalizedNumber = normalizeFlightNumber(flightNumber);
+  return sampleFlightsAfterGateChange.find((flight) => matchesFlight(flight, normalizedNumber, date)) ?? null;
 }
 
 function matchesFlight(flight: FlightLookup, flightNumber: string, date: string): boolean {

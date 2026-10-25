@@ -1,7 +1,7 @@
 import { v, type Infer } from 'convex/values';
 
 import { internal } from './_generated/api';
-import { action, internalMutation, internalQuery } from './_generated/server';
+import { action, env, internalMutation, internalQuery } from './_generated/server';
 import { flightValidator } from './schema';
 
 /**
@@ -45,7 +45,7 @@ export const lookup = action({
       return cached.flight ? { kind: 'found', flight: cached.flight } : { kind: 'not-found' };
     }
 
-    const token = process.env.APIFY_TOKEN;
+    const token = env.APIFY_TOKEN;
     if (!token) {
       return { kind: 'unavailable', configured: false, message: 'Live flight lookup is not set up yet.' };
     }
@@ -53,7 +53,7 @@ export const lookup = action({
     const trackerUrl = flightTrackerUrl(flightCode, args.date);
     if (!trackerUrl) return { kind: 'not-found' };
 
-    const actorId = process.env.FLIGHT_ACTOR_ID ?? DEFAULT_ACTOR_ID;
+    const actorId = env.FLIGHT_ACTOR_ID ?? DEFAULT_ACTOR_ID;
     let items: FlightStatsItem[];
     try {
       const response = await fetch(

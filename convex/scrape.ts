@@ -1,7 +1,7 @@
 import { v } from 'convex/values';
 
 import { internal } from './_generated/api';
-import { internalAction, internalMutation, internalQuery } from './_generated/server';
+import { env, internalAction, internalMutation, internalQuery } from './_generated/server';
 
 /**
  * Convex owns the schedule and the source list; Apify just crawls.
@@ -20,10 +20,10 @@ export const startRun = internalAction({
   args: { trigger },
   handler: async (ctx, { trigger }) => {
     const startedAt = new Date().toISOString();
-    const token = process.env.APIFY_TOKEN;
-    const actorId = process.env.APIFY_ACTOR_ID;
-    const ingestSecret = process.env.INGEST_SECRET;
-    const siteUrl = process.env.CONVEX_SITE_URL;
+    const token = env.APIFY_TOKEN;
+    const actorId = env.APIFY_ACTOR_ID;
+    const ingestSecret = env.INGEST_SECRET;
+    const siteUrl = env.CONVEX_SITE_URL;
 
     if (!token || !actorId || !ingestSecret || !siteUrl) {
       const error = 'Set APIFY_TOKEN, APIFY_ACTOR_ID and INGEST_SECRET on the deployment to enable scheduled scrapes';

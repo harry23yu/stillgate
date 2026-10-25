@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, type StyleProp, type ViewStyle } from 'react-native';
+import { Pressable, type StyleProp, type ViewStyle } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
+import { useThemedStyles } from '@/hooks/use-themed-styles';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost';
 
@@ -15,6 +16,22 @@ type ButtonProps = {
 };
 
 export function Button({ label, onPress, variant = 'primary', accessibilityHint, disabled = false, style }: ButtonProps) {
+  const styles = useThemedStyles((c) => ({
+    base: {
+      minHeight: 44,
+      borderRadius: 14,
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingHorizontal: Spacing.four,
+    },
+    pressed: { opacity: 0.8 },
+    disabled: { opacity: 0.55 },
+    primaryLabel: { color: c.surface },
+    primary: { backgroundColor: c.primary },
+    secondary: { backgroundColor: c.primaryLight },
+    ghost: { backgroundColor: 'transparent' },
+  }));
+
   return (
     <Pressable
       onPress={onPress}
@@ -26,7 +43,7 @@ export function Button({ label, onPress, variant = 'primary', accessibilityHint,
       hitSlop={8}
       style={({ pressed }) => [
         styles.base,
-        variantStyles[variant],
+        styles[variant],
         pressed && styles.pressed,
         disabled && styles.disabled,
         style,
@@ -40,34 +57,3 @@ export function Button({ label, onPress, variant = 'primary', accessibilityHint,
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  base: {
-    minHeight: 44,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: Spacing.four,
-  },
-  pressed: {
-    opacity: 0.8,
-  },
-  disabled: {
-    opacity: 0.55,
-  },
-  primaryLabel: {
-    color: Colors.surface,
-  },
-});
-
-const variantStyles: Record<ButtonVariant, ViewStyle> = StyleSheet.create({
-  primary: {
-    backgroundColor: Colors.primary,
-  },
-  secondary: {
-    backgroundColor: Colors.primaryLight,
-  },
-  ghost: {
-    backgroundColor: 'transparent',
-  },
-});

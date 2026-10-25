@@ -1,26 +1,60 @@
-import { ConvexProvider } from 'convex/react';
 import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { useFonts } from 'expo-font';
+import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import { ConvexProvider } from 'convex/react';
+import type { ReactNode } from 'react';
+import { useColorScheme } from 'react-native';
 
 import { LaunchScreen } from '@/components/launch-screen';
-import { Colors } from '@/constants/theme';
-import { convex } from '@/lib/convex';
+import { SettingsProvider, useSettings } from '@/contexts/settings';
+import { useTheme } from '@/hooks/use-theme';
+import { convex as convexClient } from '@/lib/convex';
 
 SplashScreen.preventAutoHideAsync();
 
-const stillgateTheme = {
-  ...DefaultTheme,
-  dark: false,
-  colors: {
-    ...DefaultTheme.colors,
-    primary: Colors.primary,
-    background: Colors.background,
-    card: Colors.surface,
-    text: Colors.text,
-    border: Colors.border,
-  },
-};
+// One client for the whole app (src/lib/convex.ts): the provider below and the
+// non-hook calls in src/data/client.ts and flight-provider.ts share its connection.
+// Null until EXPO_PUBLIC_CONVEX_URL is set, so the app runs on local mock data until then.
+
+function ConvexGate({ children }: { children: ReactNode }) {
+  if (!convexClient) return <>{children}</>;
+  return <ConvexProvider client={convexClient}>{children}</ConvexProvider>;
+}
+
+function ThemedApp() {
+  const palette = useTheme();
+  const { settings } = useSettings();
+  const system = useColorScheme();
+  const scheme = settings.theme === 'system' ? system ?? 'light' : settings.theme;
+
+  const navTheme = {
+    ...DefaultTheme,
+    dark: scheme === 'dark',
+    colors: {
+      ...DefaultTheme.colors,
+      primary: palette.primary,
+      background: palette.background,
+      card: palette.surface,
+      text: palette.text,
+      border: palette.border,
+    },
+  };
+
+  return (
+    <ThemeProvider value={navTheme}>
+      <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
+      <LaunchScreen />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="gate-change" options={{ presentation: 'card' }} />
+        <Stack.Screen name="flight-lookup" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="review" options={{ presentation: 'modal' }} />
+      </Stack>
+    </ThemeProvider>
+  );
+}
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -32,17 +66,11 @@ export default function RootLayout() {
     return null;
   }
 
-  const app = (
-    <ThemeProvider value={stillgateTheme}>
-      <LaunchScreen />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="gate-change" options={{ presentation: 'card' }} />
-        <Stack.Screen name="flight-lookup" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="review" options={{ presentation: 'modal' }} />
-      </Stack>
-    </ThemeProvider>
+  return (
+    <ConvexGate>
+      <SettingsProvider>
+        <ThemedApp />
+      </SettingsProvider>
+    </ConvexGate>
   );
-
-  return convex ? <ConvexProvider client={convex}>{app}</ConvexProvider> : app;
 }

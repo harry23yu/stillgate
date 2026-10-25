@@ -1,21 +1,26 @@
 {
-  /* Typechecks Convex functions (run by `npx convex dev`). */
+  /* This TypeScript project config describes the environment that
+   * Convex functions run in and is used to typecheck them.
+   * You can modify it, but some settings are required to use Convex.
+   */
   "compilerOptions": {
+    /* These settings are not required by Convex and can be modified. */
     "allowJs": true,
     "strict": true,
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
     "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
+
+    /* These compiler options are required by Convex */
     "target": "ESNext",
-    "lib": ["ES2021", "dom"],
+    "lib": ["ES2023", "dom"],
     "forceConsistentCasingInFileNames": true,
     "module": "ESNext",
     "isolatedModules": true,
     "noEmit": true,
-    /* TypeScript 6 no longer auto-includes @types; Convex functions read process.env. */
-    "types": ["node"],
-    /* seed.ts imports the app's mock airports, which use the app's alias. */
+
+    /* Stillgate: seed.ts imports the app's mock airports, which use the app's "@/" alias. */
     "paths": { "@/*": ["../src/*"] }
   },
   "include": ["./**/*"],

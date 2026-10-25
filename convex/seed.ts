@@ -45,11 +45,11 @@ export const airports = internalMutation({
         areaCenters: airport.areaCenters,
       };
       const existing = await ctx.db
-        .query('airports')
+        .query('airportMaps')
         .withIndex('by_code', (q) => q.eq('code', airport.code))
         .unique();
       if (existing) await ctx.db.replace(existing._id, fields);
-      else await ctx.db.insert('airports', fields);
+      else await ctx.db.insert('airportMaps', fields);
     }
   },
 });

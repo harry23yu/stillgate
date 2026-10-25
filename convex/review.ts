@@ -2,7 +2,7 @@ import { ConvexError, v } from 'convex/values';
 
 import { internal } from './_generated/api';
 import type { Doc } from './_generated/dataModel';
-import { mutation, query } from './_generated/server';
+import { env, mutation, query } from './_generated/server';
 import { publishedFields } from './schema';
 
 /**
@@ -11,7 +11,7 @@ import { publishedFields } from './schema';
  * anyone outside the team can reach the review screen.
  */
 function requireReviewer(reviewKey: string) {
-  const expected = process.env.REVIEW_KEY;
+  const expected = env.REVIEW_KEY;
   if (!expected || reviewKey !== expected) {
     throw new ConvexError('Invalid review key');
   }
@@ -33,7 +33,7 @@ export interface Suggestion {
  * the hand-made gate-to-area table. Always an approximation: the reviewer
  * confirms or moves it before approving.
  */
-function suggestPosition(airport: Doc<'airports'> | null, place: Doc<'places'>): Suggestion {
+function suggestPosition(airport: Doc<'airportMaps'> | null, place: Doc<'places'>): Suggestion {
   const { gateHint, terminalHint } = place.scraped;
   if (!airport) return { terminal: null, x: null, y: null, basis: 'No airport map metadata — run seed:airports' };
 
@@ -63,7 +63,7 @@ export const queue = query({
     requireReviewer(reviewKey);
     const code = airportCode.toUpperCase();
     const airport = await ctx.db
-      .query('airports')
+      .query('airportMaps')
       .withIndex('by_code', (q) => q.eq('code', code))
       .unique();
 
