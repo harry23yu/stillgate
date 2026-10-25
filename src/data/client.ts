@@ -168,15 +168,32 @@ export async function getFlightStatus(
   airportCode?: string,
 ): Promise<FlightLookup | null> {
   const normalizedNumber = normalizeFlightNumber(flightNumber);
-  return sampleFlights.find((flight) =>
-    matchesFlight(flight, normalizedNumber, date) && (!airportCode || flight.origin.code === airportCode),
-  ) ?? null;
+  const atAirport = (flight: FlightLookup) => !airportCode || flight.origin.code === airportCode;
+  return (
+    sampleFlights.find((flight) => matchesFlight(flight, normalizedNumber, date) && atAirport(flight)) ??
+    findDemoFlightByNumber(sampleFlights, normalizedNumber, atAirport)
+  );
 }
 
 /** Returns the flight's state after the labeled, simulated gate change. */
 export async function simulateGateChange(flightNumber: string, date: string): Promise<FlightLookup | null> {
   const normalizedNumber = normalizeFlightNumber(flightNumber);
-  return sampleFlightsAfterGateChange.find((flight) => matchesFlight(flight, normalizedNumber, date)) ?? null;
+  return (
+    sampleFlightsAfterGateChange.find((flight) => matchesFlight(flight, normalizedNumber, date)) ??
+    findDemoFlightByNumber(sampleFlightsAfterGateChange, normalizedNumber)
+  );
+}
+
+/**
+ * The sample flights' dates are recomputed from "now" (src/data/mock/flight.ts), so a date saved
+ * yesterday no longer matches. Demo flights are labeled demo data, so fall back to the flight number.
+ */
+function findDemoFlightByNumber(
+  flights: FlightLookup[],
+  normalizedNumber: string,
+  accept: (flight: FlightLookup) => boolean = () => true,
+): FlightLookup | null {
+  return flights.find((flight) => normalizeFlightNumber(flight.flight) === normalizedNumber && accept(flight)) ?? null;
 }
 
 function matchesFlight(flight: FlightLookup, flightNumber: string, date: string): boolean {
@@ -184,6 +201,7 @@ function matchesFlight(flight: FlightLookup, flightNumber: string, date: string)
 }
 
 export function normalizeFlightNumber(flightNumber: string): string {
-  return flightNumber.toUpperCase().replace(/[\s-]+/g, '');
+  // "+" too: a query string like ?flight=UA+1 reaches the app as "UA+1" (expo-router does not turn "+" into a space).
+  return flightNumber.toUpperCase().replace(/[\s+-]+/g, '');
 }
 

@@ -42,6 +42,7 @@ export default function GateChangeScreen() {
   const [after, setAfter] = useState<FlightLookup | null>(null);
   const [profile, setProfile] = useState<Profile>(defaultProfile);
   const [gentleAlertsOnly, setGentleAlertsOnly] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -63,6 +64,7 @@ export default function GateChangeScreen() {
       if (!active) return;
       setBefore(beforeFlight);
       setAfter(afterFlight);
+      setNotFound(!beforeFlight?.gate || !afterFlight?.gate);
       if (beforeFlight) {
         const airportCode = beforeFlight.origin.code === 'CHS' ? 'CHS' : 'SFO';
         const matchingAirport = await getAirport(airportCode);
@@ -76,6 +78,24 @@ export default function GateChangeScreen() {
   }, [flightNumber, date]);
 
   const theme = useTheme();
+
+  if (notFound) {
+    return (
+      <ThemedView style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.content}>
+            <Card>
+              <ThemedText type="subtitle">We couldn&apos;t set up this gate change</ThemedText>
+              <ThemedText themeColor="textSecondary">
+                The gate-change demo works for the sample flights. Go back and pick one, or add the flight again.
+              </ThemedText>
+              <Button label="Go back" variant="secondary" onPress={() => router.back()} />
+            </Card>
+          </View>
+        </SafeAreaView>
+      </ThemedView>
+    );
+  }
 
   if (!airport || !before || !after || !before.gate || !after.gate) {
     return <ThemedView style={styles.container} />;
