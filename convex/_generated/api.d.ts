@@ -10,6 +10,7 @@
 
 import type * as airports from "../airports.js";
 import type * as crons from "../crons.js";
+import type * as demo from "../demo.js";
 import type * as flights from "../flights.js";
 import type * as gateChange from "../gateChange.js";
 import type * as http from "../http.js";
@@ -32,6 +33,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   airports: typeof airports;
   crons: typeof crons;
+  demo: typeof demo;
   flights: typeof flights;
   gateChange: typeof gateChange;
   http: typeof http;
