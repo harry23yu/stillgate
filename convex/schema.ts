@@ -245,6 +245,16 @@ export default defineSchema({
   }).index('by_key', ['key']),
 
   /**
+   * Cartesia clips saved in file storage (voice.ts), one per text and voice,
+   * so a repeated step plays without calling Cartesia again.
+   */
+  voiceClips: defineTable({
+    /** SHA-256 of model, voice ID and text. */
+    key: v.string(),
+    storageId: v.id('_storage'),
+  }).index('by_key', ['key']),
+
+  /**
    * Hand-maintained floor-plan metadata (terminals, gate → area, area
    * centers) used to suggest pin positions in the review queue. Not the
    * traveler-facing `airports` record above. Seeded via `seed:airports`.

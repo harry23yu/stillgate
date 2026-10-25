@@ -1,0 +1,9 @@
+{
+  "name": "voice-test",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Quick Cartesia text-to-speech test",
+  "scripts": {
+    "start": "node --env-file=.env speak.js"
+  }
+}
