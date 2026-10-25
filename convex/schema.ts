@@ -172,9 +172,13 @@ export default defineSchema({
     spotId: v.string(), // id of a quiet spot, loud zone or service in that airport's record
     verdict: v.union(v.literal("accurate"), v.literal("wrong")),
     note: v.optional(v.string()),
+    // Random per-install id (src/data/device-id.ts), so one device counts once per spot per day.
+    // Optional only so reports written before it existed stay valid.
+    deviceId: v.optional(v.string()),
   })
     .index("by_airportCode", ["airportCode"])
-    .index("by_airportCode_and_spotId", ["airportCode", "spotId"]),
+    .index("by_airportCode_and_spotId", ["airportCode", "spotId"])
+    .index("by_airportCode_and_spotId_and_deviceId", ["airportCode", "spotId", "deviceId"]),
 
   sources: defineTable({
     airportCode: v.string(),
@@ -212,6 +216,8 @@ export default defineSchema({
     sourceChanged: v.optional(v.boolean()),
     /** `lastVerified` is older than the re-verification window (see maintenance.ts). */
     reverifyDue: v.optional(v.boolean()),
+    /** A traveler reported this place as wrong (reports.ts). */
+    travelerReported: v.optional(v.boolean()),
     scraped: scrapedFields,
     published: v.optional(publishedFields),
     lastVerified: v.optional(v.string()),
