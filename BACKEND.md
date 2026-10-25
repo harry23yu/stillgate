@@ -193,7 +193,7 @@ Rules for records:
 
 ## Known gaps
 
-- The mobile app does not call this backend yet; it reads local mock data.
-- Walk times are a placeholder (one entry: SFO gate C2 to the sensory room).
+- The mobile app calls Convex for reviewed airport places, flight lookup, guide phrasing and Cartesia audio when configured. It falls back to bundled airport/sample data when Convex is unavailable or an integration is not configured.
+- Only SFO is seeded in Convex. The mobile app also bundles local map samples for SFO and CHS.
+- Walk times are placeholders, not measured indoor navigation (the current backend has one SFO gate-to-sensory-room estimate).
 - SFO data comes from the project brief and has not been re-checked against the SFO page.
-- Only SFO is seeded.
