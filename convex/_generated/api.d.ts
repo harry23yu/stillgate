@@ -21,6 +21,7 @@ import type * as reports from "../reports.js";
 import type * as review from "../review.js";
 import type * as scrape from "../scrape.js";
 import type * as seed from "../seed.js";
+import type * as voice from "../voice.js";
 
 import type {
   ApiFromModules,
@@ -42,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   review: typeof review;
   scrape: typeof scrape;
   seed: typeof seed;
+  voice: typeof voice;
 }>;
 
 /**

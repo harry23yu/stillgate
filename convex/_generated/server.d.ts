@@ -33,6 +33,8 @@ type Env = {
   readonly ANTHROPIC_API_KEY: string | undefined;
   readonly APIFY_ACTOR_ID: string | undefined;
   readonly APIFY_TOKEN: string | undefined;
+  readonly CARTESIA_API_KEY: string | undefined;
+  readonly CARTESIA_VOICE_ID: string | undefined;
   readonly FLIGHT_ACTOR_ID: string | undefined;
   readonly IMPORT_SECRET: string | undefined;
   readonly INGEST_SECRET: string | undefined;

@@ -191,7 +191,7 @@ export default function CalmGuideScreen() {
             <Button label="Stop audio" variant="secondary" onPress={audio.stop} />
           ) : null}
           <ThemedText type="small" themeColor="textSecondary" style={styles.listenNote}>
-            {audio.error ?? 'Cartesia voice will read this step when the audio service is connected.'}
+            {audio.error ?? 'A calm Cartesia voice reads this step aloud.'}
           </ThemedText>
 
           <View style={styles.navRow}>

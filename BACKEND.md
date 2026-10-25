@@ -116,6 +116,22 @@ to 300 characters) and `detailLevel` (`brief`, `standard` or `detailed`). Return
 - Needs `ANTHROPIC_API_KEY` on the deployment (`npx convex env set ANTHROPIC_API_KEY <key>`).
 - Public and unauthenticated, so anyone with the URL can spend credits. Fine for the event; add rate limiting before launch.
 
+### `voice:speak` (action)
+
+```bash
+npx convex run voice:speak '{"text":"Your gate changed to C2. Take your time."}'
+```
+
+Turns text into Cartesia speech (MP3) and returns `{ kind: "audio", uri }`, a Convex file-storage URL the app
+plays. Each clip is saved in file storage (table `voiceClips`), so the same text in the same voice is only sent
+to Cartesia once. Play each demo step once before presenting and the demo no longer depends on Cartesia.
+
+- Text is trimmed; empty text or more than 600 characters is refused.
+- On failure you get `{ kind: "unavailable", message, configured }`. `configured: false` means the env vars below are missing.
+- Needs `CARTESIA_API_KEY` and `CARTESIA_VOICE_ID` on the deployment (`npx convex env set ...`).
+- The app calls it from `src/data/guide-audio-provider.ts` (Calm Guide "Listen" button).
+- Public and unauthenticated, so anyone with the URL can spend Cartesia credits. Fine for the event; add rate limiting before launch.
+
 ### Reports ("Was this accurate?")
 
 ```bash

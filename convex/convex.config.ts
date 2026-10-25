@@ -12,6 +12,10 @@ import rateLimiter from "@convex-dev/rate-limiter/convex.config.js";
 // APIFY_TOKEN: Apify API token, used to start the weekly scrape and live flight lookups.
 // APIFY_ACTOR_ID: the deployed accessibility scraper, e.g. "<username>~stillgate-accessibility-scraper".
 // FLIGHT_ACTOR_ID: optional override for the flight-status Actor (default parseforge~flightstats-scraper).
+//
+// Voice (convex/voice.ts):
+// CARTESIA_API_KEY: Cartesia API key. Set with: npx convex env set CARTESIA_API_KEY <key>
+// CARTESIA_VOICE_ID: the Calm Guide voice. Set with: npx convex env set CARTESIA_VOICE_ID <id>
 const app = defineApp({
   env: {
     IMPORT_SECRET: v.optional(v.string()),
@@ -21,6 +25,8 @@ const app = defineApp({
     APIFY_TOKEN: v.optional(v.string()),
     APIFY_ACTOR_ID: v.optional(v.string()),
     FLIGHT_ACTOR_ID: v.optional(v.string()),
+    CARTESIA_API_KEY: v.optional(v.string()),
+    CARTESIA_VOICE_ID: v.optional(v.string()),
   },
 });
 
