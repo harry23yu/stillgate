@@ -3,6 +3,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { v } from "convex/values";
 import { action, env } from "./_generated/server";
+import { rateLimiter } from "./limits";
 
 // Claude only REWORDS steps that rules already chose. It never decides facts.
 // A wrong answer (a changed gate, time or room) is worse than none for a stressed traveler, so:
@@ -48,9 +49,13 @@ export const phraseSteps = action({
     steps: v.array(v.string()),
     detailLevel: v.union(v.literal("brief"), v.literal("standard"), v.literal("detailed")),
   },
-  handler: async (_ctx, args) => {
+  handler: async (ctx, args) => {
     const original = args.steps;
     const fallback = (reason: string) => ({ steps: original, rewritten: false as const, reason });
+
+    // Checked first so a flood cannot reach the API; the app just shows the original text.
+    const limit = await rateLimiter.limit(ctx, "phraseSteps");
+    if (!limit.ok) return fallback("rate limited");
 
     if (original.length === 0) return fallback("no steps");
     // Public action that spends API credits: keep inputs small.

@@ -14,6 +14,7 @@ import type * as flights from "../flights.js";
 import type * as gateChange from "../gateChange.js";
 import type * as http from "../http.js";
 import type * as ingest from "../ingest.js";
+import type * as limits from "../limits.js";
 import type * as maintenance from "../maintenance.js";
 import type * as phrase from "../phrase.js";
 import type * as reports from "../reports.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   gateChange: typeof gateChange;
   http: typeof http;
   ingest: typeof ingest;
+  limits: typeof limits;
   maintenance: typeof maintenance;
   phrase: typeof phrase;
   reports: typeof reports;
@@ -68,4 +70,6 @@ export declare const internal: FilterApi<
   FunctionReference<any, "internal">
 >;
 
-export declare const components: {};
+export declare const components: {
+  rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
+};

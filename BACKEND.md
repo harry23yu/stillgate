@@ -133,6 +133,22 @@ npx convex run reports:spotReportSummary '{"airportCode":"SFO","spotId":"sfo-sen
 - Reports never change an airport record. They are signals for a person to re-verify the pin.
 - Unauthenticated, so anyone can submit and nothing limits one person's volume. Fine for the event; add rate limiting and moderation before launch.
 
+## Rate limits
+
+The public functions that spend credits or accept writes are limited with Convex's rate-limiter component.
+All limits are defined in `convex/limits.ts`; there are no accounts, so they are global or per pin.
+
+| Limit | Applies to | Allowed |
+|---|---|---|
+| `phraseSteps` | `phrase:phraseSteps` (Claude credits) | 20 per minute, burst of 10. Over the limit it returns the original steps with `reason: "rate limited"`. |
+| `submitReport` | `reports:submitReport`, overall | 60 per minute, burst of 20 |
+| `submitReportPerSpot` | `reports:submitReport`, per pin | 6 per minute, burst of 6 |
+| `synthesizeSpeech` | defined for the Cartesia voice action to use | 30 per minute, burst of 10 |
+
+- Over the limit, `submitReport` throws a `ConvexError` ("Too many reports ...").
+- The limiter is transactional: a mutation that fails (for example an unknown spot) does not use up tokens.
+- To protect a new function: `const { ok } = await rateLimiter.limit(ctx, "name")` (add `{ key }` for per-key limits), importing `rateLimiter` from `./limits`.
+
 ## Importing airport data (for the Apify Actor)
 
 ```
