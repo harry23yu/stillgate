@@ -1,9 +1,11 @@
+import { ConvexProvider } from 'convex/react';
 import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 
 import { LaunchScreen } from '@/components/launch-screen';
 import { Colors } from '@/constants/theme';
+import { convex } from '@/lib/convex';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -30,14 +32,17 @@ export default function RootLayout() {
     return null;
   }
 
-  return (
+  const app = (
     <ThemeProvider value={stillgateTheme}>
       <LaunchScreen />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="gate-change" options={{ presentation: 'card' }} />
         <Stack.Screen name="flight-lookup" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="review" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>
   );
+
+  return convex ? <ConvexProvider client={convex}>{app}</ConvexProvider> : app;
 }

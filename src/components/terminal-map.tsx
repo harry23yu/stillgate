@@ -10,6 +10,7 @@ import { ThemedText } from '@/components/themed-text';
 import { Colors, Spacing } from '@/constants/theme';
 import { estimateWalkMinutes, getAirport, YOU_POSITION } from '@/data/client';
 import type { Airport, AirportCode, FlightLookup, Place, PlaceType } from '@/data/types';
+import { formatDateTime } from '@/lib/format';
 import { focusForGate, mapPointForGate, mapPointForPlace, MAP_IMAGE_SIZE, type AirportMapFocus, type MapPoint } from '@/lib/sfo-map-layout';
 
 const FILTERS: { type: PlaceType; label: string }[] = [
@@ -250,6 +251,18 @@ export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapPr
               {airportCode === 'CHS'
                 ? 'The map is from CHS. Place pins are examples and haven’t been verified.'
                 : 'Place and gate markers are approximate. Check airport signs for current directions.'}
+            </ThemedText>
+          </View>
+        </View>
+      )}
+
+      {airport.dataSource === 'cached' && airport.dataFetchedAt && (
+        <View style={styles.demoNotice} accessibilityRole="text">
+          <IconSymbol name="arrow.down.circle.fill" size={18} color={Colors.primary} />
+          <View style={styles.demoNoticeCopy}>
+            <ThemedText type="smallBold">Using places saved on your phone</ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              We couldn’t reach Stillgate just now, so this shows what you saved on {formatDateTime(airport.dataFetchedAt)}.
             </ThemedText>
           </View>
         </View>

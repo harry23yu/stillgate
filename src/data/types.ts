@@ -44,7 +44,17 @@ export interface Airport {
   areaCenters: Record<string, { x: number; y: number }>;
   /** Security checkpoint lanes with live wait estimates, used by the arrival-time and checkpoint rules. */
   checkpointLanes: CheckpointWait[];
+  /**
+   * Where `places` came from: 'live' = reviewed backend data just fetched,
+   * 'cached' = reviewed data saved on this device earlier (offline),
+   * 'sample' = bundled demo data only. Set by getAirport().
+   */
+  dataSource?: AirportDataSource;
+  /** ISO time the reviewed places were fetched; absent for 'sample'. */
+  dataFetchedAt?: string;
 }
+
+export type AirportDataSource = 'live' | 'cached' | 'sample';
 
 export type FlightStatus = 'on-time' | 'delayed' | 'boarding' | 'gate-changed' | 'cancelled' | 'unknown';
 

@@ -10,7 +10,7 @@ import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors, Spacing } from '@/constants/theme';
-import { getFlightStatus } from '@/data/client';
+import { getFlightStatus, getSupportedAirportCode, prefetchAirport } from '@/data/client';
 import { lookupFlight, type FlightLookupResult } from '@/data/flight-provider';
 import { sampleChsFlight, sampleDcaFlight, sampleFlight } from '@/data/mock/flight';
 import { clearSavedFlight, getSavedFlight, saveFlight } from '@/data/saved-flight';
@@ -110,6 +110,12 @@ export default function FlightLookupScreen() {
         originCode: flight.origin.code,
         lookup: flight,
       });
+      // Save both airports' reviewed places now, while Wi-Fi is likely good,
+      // so the map works offline at the airport. Fire-and-forget.
+      for (const code of [flight.origin.code, flight.destination?.code]) {
+        const supported = getSupportedAirportCode(code);
+        if (supported) void prefetchAirport(supported);
+      }
       setHasSavedFlight(true);
       router.back();
     } catch {

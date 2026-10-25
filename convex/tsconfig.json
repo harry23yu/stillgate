@@ -1,0 +1,23 @@
+{
+  /* Typechecks Convex functions (run by `npx convex dev`). */
+  "compilerOptions": {
+    "allowJs": true,
+    "strict": true,
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ESNext",
+    "lib": ["ES2021", "dom"],
+    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
+    "isolatedModules": true,
+    "noEmit": true,
+    /* TypeScript 6 no longer auto-includes @types; Convex functions read process.env. */
+    "types": ["node"],
+    /* seed.ts imports the app's mock airports, which use the app's alias. */
+    "paths": { "@/*": ["../src/*"] }
+  },
+  "include": ["./**/*"],
+  "exclude": ["./_generated"]
+}
