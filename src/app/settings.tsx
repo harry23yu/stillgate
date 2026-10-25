@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -8,6 +7,7 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useSettings } from '@/contexts/settings';
 import { useTheme } from '@/hooks/use-theme';
+import { goBackOrHome } from '@/lib/navigation';
 
 const TEXT_SIZES = [
   { label: 'A', value: 1, a11y: 'Default text size' },
@@ -31,7 +31,7 @@ export default function SettingsScreen() {
         <View style={styles.header}>
           <ThemedText type="title">Settings</ThemedText>
           <Pressable
-            onPress={() => router.back()}
+            onPress={goBackOrHome}
             accessibilityRole="button"
             accessibilityLabel="Close settings"
             hitSlop={12}

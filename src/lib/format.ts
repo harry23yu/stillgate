@@ -20,6 +20,16 @@ export function formatDateHeader(date: Date): string {
     .toUpperCase();
 }
 
+/** "Oct 24, 2:05 PM" — for "saved on" labels. */
+export function formatDateTime(iso: string): string {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(iso));
+}
+
 export function formatTime(iso: string): string {
   return new Intl.DateTimeFormat('en-US', {
     hour: 'numeric',

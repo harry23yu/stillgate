@@ -1,7 +1,7 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useQuery } from 'convex/react';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
@@ -25,6 +25,8 @@ import { sampleFlight } from '@/data/mock/flight';
 import { defaultProfile, getProfile } from '@/data/profile';
 import type { Airport, FlightLookup, Place, Profile } from '@/data/types';
 import { FLIGHT_STATUS_LABEL, formatTime } from '@/lib/format';
+import { goBackOrHome } from '@/lib/navigation';
+import { notify } from '@/lib/notify';
 
 const hasConvex = Boolean(process.env.EXPO_PUBLIC_CONVEX_URL);
 
@@ -90,7 +92,7 @@ export default function GateChangeScreen() {
     const location = originCode === 'CHS'
       ? `Concourse ${newGate.charAt(0)} at Charleston International Airport`
       : 'the International Terminal at SFO';
-    Alert.alert(
+    notify(
       `Gate ${newGate}`,
       `Gate ${newGate} is in ${location}. Turn-by-turn directions are not part of this demo — use the map to see the area.`,
     );
@@ -107,7 +109,7 @@ export default function GateChangeScreen() {
             </ThemedText>
           </View>
           <Pressable
-            onPress={() => router.back()}
+            onPress={goBackOrHome}
             accessibilityRole="button"
             accessibilityLabel="Close"
             hitSlop={12}
@@ -169,7 +171,7 @@ export default function GateChangeScreen() {
 
           <View style={styles.actions}>
             <Button label="Show the way to the new gate" variant="secondary" onPress={handleShowWayToGate} />
-            <Button label="Not now" variant="ghost" onPress={() => router.back()} />
+            <Button label="Not now" variant="ghost" onPress={goBackOrHome} />
           </View>
 
           <View style={[styles.divider, { backgroundColor: theme.neutralFillAlt }]} />

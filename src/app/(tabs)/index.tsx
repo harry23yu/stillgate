@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
@@ -15,6 +15,7 @@ import { getFlightStatus, getSupportedAirportCode } from '@/data/client';
 import { clearSavedFlight, getSavedFlights, type SavedFlight } from '@/data/saved-flight';
 import type { FlightLookup } from '@/data/types';
 import { FLIGHT_STATUS_LABEL, formatDateHeader, formatTime } from '@/lib/format';
+import { confirmAction } from '@/lib/notify';
 
 export default function HomeScreen() {
   const [flight, setFlight] = useState<FlightLookup | null>(null);
@@ -57,14 +58,14 @@ export default function HomeScreen() {
 
   const confirmRemoveFlight = useCallback((saved: SavedFlight) => {
     const label = saved.lookup?.flight ?? saved.flightNumber;
-    Alert.alert(
-      `Remove ${label}?`,
-      'This flight will be removed from this device.',
-      [
-        { text: 'Keep flight', style: 'cancel' },
-        { text: 'Remove', style: 'destructive', onPress: () => { void removeFlight(saved); } },
-      ],
-    );
+    confirmAction({
+      title: `Remove ${label}?`,
+      message: 'This flight will be removed from this device.',
+      cancelLabel: 'Keep flight',
+      confirmLabel: 'Remove',
+      destructive: true,
+      onConfirm: () => void removeFlight(saved),
+    });
   }, [removeFlight]);
 
   const primarySaved = savedFlights[0];

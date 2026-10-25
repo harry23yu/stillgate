@@ -45,3 +45,6 @@ example
 # Local project context for Claude, not shared with the repo
 CLAUDE.md
 .claude/settings.local.json
+
+# Local Convex backend data (anonymous dev deployment)
+.convex/

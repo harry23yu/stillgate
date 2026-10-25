@@ -12,6 +12,7 @@ import { Spacing } from '@/constants/theme';
 import { defaultProfile, getProfile, saveProfile } from '@/data/profile';
 import type { Profile } from '@/data/types';
 import { useTheme } from '@/hooks/use-theme';
+import { goBackOrHome } from '@/lib/navigation';
 
 type SensitivityLevel = NonNullable<Profile['noise']>;
 
@@ -63,7 +64,7 @@ export default function ProfileScreen() {
         <View style={styles.header}>
           <ThemedText type="title">Your sensory profile</ThemedText>
           <Pressable
-            onPress={() => router.back()}
+            onPress={goBackOrHome}
             accessibilityRole="button"
             accessibilityLabel="Close sensory profile"
             hitSlop={12}

@@ -1,10 +1,10 @@
-import { router } from 'expo-router';
 import { Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
+import { goBackOrHome } from '@/lib/navigation';
 
 type StubScreenProps = {
   title: string;
@@ -19,7 +19,7 @@ export function StubScreen({ title, description, dismissible }: StubScreenProps)
       <SafeAreaView style={styles.safeArea}>
         {dismissible && (
           <Pressable
-            onPress={() => router.back()}
+            onPress={goBackOrHome}
             accessibilityRole="button"
             accessibilityLabel="Close"
             hitSlop={12}

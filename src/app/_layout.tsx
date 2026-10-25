@@ -2,20 +2,20 @@ import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { ConvexProvider, ConvexReactClient } from 'convex/react';
+import { ConvexProvider } from 'convex/react';
 import type { ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
 
 import { LaunchScreen } from '@/components/launch-screen';
 import { SettingsProvider, useSettings } from '@/contexts/settings';
 import { useTheme } from '@/hooks/use-theme';
+import { convex as convexClient } from '@/lib/convex';
 
 SplashScreen.preventAutoHideAsync();
 
-// Created once at module load. Null until EXPO_PUBLIC_CONVEX_URL is set in .env.local,
-// so the app runs entirely on local mock data until Convex is wired up. See src/data/client.ts.
-const convexUrl = process.env.EXPO_PUBLIC_CONVEX_URL;
-const convexClient = convexUrl ? new ConvexReactClient(convexUrl) : null;
+// One client for the whole app (src/lib/convex.ts): the provider below and the
+// non-hook calls in src/data/client.ts and flight-provider.ts share its connection.
+// Null until EXPO_PUBLIC_CONVEX_URL is set, so the app runs on local mock data until then.
 
 function ConvexGate({ children }: { children: ReactNode }) {
   if (!convexClient) return <>{children}</>;
@@ -50,6 +50,7 @@ function ThemedApp() {
         <Stack.Screen name="gate-change" options={{ presentation: 'card' }} />
         <Stack.Screen name="flight-lookup" options={{ presentation: 'modal' }} />
         <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="review" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>
   );
