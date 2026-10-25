@@ -50,6 +50,9 @@ export const lookup = action({
       return { kind: 'unavailable', configured: false, message: 'Live flight lookup is not set up yet.' };
     }
 
+    const trackerUrl = flightTrackerUrl(flightCode, args.date);
+    if (!trackerUrl) return { kind: 'not-found' };
+
     const actorId = process.env.FLIGHT_ACTOR_ID ?? DEFAULT_ACTOR_ID;
     let items: FlightStatsItem[];
     try {
@@ -58,7 +61,10 @@ export const lookup = action({
         {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ searchTerms: [flightCode], flightDate: args.date, maxItems: 5 }),
+          // The Actor's `searchTerms` flight-number search returned nothing in
+          // testing (Oct 2026) while the flight's own tracker page worked, so
+          // pass that page directly.
+          body: JSON.stringify({ startUrls: [{ url: trackerUrl }], maxItems: 5 }),
         },
       );
       if (!response.ok) {
@@ -113,6 +119,18 @@ export const saveCached = internalMutation({
   },
 });
 
+/**
+ * "UA901" + "2026-10-25" →
+ * https://www.flightstats.com/v2/flight-tracker/UA/901?year=2026&month=10&date=25
+ * Accepts 2-character IATA airline codes (UA, B6, 9W) and 3-letter ICAO codes (UAL).
+ */
+export function flightTrackerUrl(flightCode: string, date: string): string | null {
+  const match = /^([A-Z][A-Z0-9]|[0-9][A-Z])(\d{1,4}[A-Z]?)$/.exec(flightCode) ?? /^([A-Z]{3})(\d{1,4}[A-Z]?)$/.exec(flightCode);
+  const [year, month, day] = date.split('-').map(Number);
+  if (!match || !year || !month || !day) return null;
+  return `https://www.flightstats.com/v2/flight-tracker/${match[1]}/${match[2]}?year=${year}&month=${month}&date=${day}`;
+}
+
 /** The subset of the Actor's ~50 output fields Stillgate uses. */
 interface FlightStatsItem {
   flightNumber?: string;
@@ -145,7 +163,7 @@ export function toFlightLookup(item: FlightStatsItem, previousGate: string | nul
     status: toStatus(item, previousGate, gate),
     scheduledDeparture,
     gate,
-    terminal: terminal && /^\d+$/.test(terminal) ? `Terminal ${terminal}` : terminal,
+    terminal: formatTerminal(terminal),
     retrievedAt: new Date().toISOString(),
     isRecorded: false,
     origin: { code: item.originAirportCode.toUpperCase(), city: present(item.originCity) ?? item.originAirportCode },
@@ -183,6 +201,14 @@ function withUtcOffset(local: string | undefined, utc: string | undefined): stri
   const sign = offsetMinutes >= 0 ? '+' : '-';
   const abs = Math.abs(offsetMinutes);
   return `${localTime.slice(0, 19)}${sign}${pad(Math.floor(abs / 60))}:${pad(abs % 60)}`;
+}
+
+/** FlightStats terminal codes: "8" → "Terminal 8", "INTL" → "International". */
+function formatTerminal(terminal: string | null): string | null {
+  if (!terminal) return null;
+  if (/^\d+$/.test(terminal)) return `Terminal ${terminal}`;
+  if (terminal.toUpperCase() === 'INTL') return 'International';
+  return terminal;
 }
 
 /** The Actor writes "Not Disclosed" or "N/A" for missing values. */
