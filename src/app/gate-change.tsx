@@ -89,7 +89,11 @@ export default function GateChangeScreen() {
               <ThemedText themeColor="textSecondary">
                 The gate-change demo works for the sample flights. Go back and pick one, or add the flight again.
               </ThemedText>
-              <Button label="Go back" variant="secondary" onPress={() => router.back()} />
+              <Button
+                label="Go back"
+                variant="secondary"
+                onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+              />
             </Card>
           </View>
         </SafeAreaView>
