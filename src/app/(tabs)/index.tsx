@@ -1,6 +1,6 @@
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Alert, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
@@ -12,12 +12,13 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing, type Palette } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { getFlightStatus, getSupportedAirportCode } from '@/data/client';
-import { getSavedFlight } from '@/data/saved-flight';
+import { clearSavedFlight, getSavedFlights, type SavedFlight } from '@/data/saved-flight';
 import type { FlightLookup } from '@/data/types';
 import { FLIGHT_STATUS_LABEL, formatDateHeader, formatTime } from '@/lib/format';
 
 export default function HomeScreen() {
   const [flight, setFlight] = useState<FlightLookup | null>(null);
+  const [savedFlights, setSavedFlights] = useState<SavedFlight[]>([]);
   const airportCode = getSupportedAirportCode(flight?.origin.code ?? 'SFO');
   const airportLabel = flight?.origin.code ?? 'SFO';
   const [flightDate, setFlightDate] = useState<string | null>(null);
@@ -25,28 +26,48 @@ export default function HomeScreen() {
   const theme = useTheme();
   const styles = useMemo(() => makeStyles(theme), [theme]);
 
-  useFocusEffect(
-    useCallback(() => {
-      getSavedFlight().then(async (saved) => {
-        if (!saved) {
-          setFlight(null);
-          setFlightDate(null);
-          setUnmatchedFlightNumber(null);
-          return;
-        }
-        const result = saved.lookup ?? await getFlightStatus(saved.flightNumber, saved.date, saved.originCode);
-        if (result) {
-          setFlight(result);
-          setFlightDate(saved.date);
-          setUnmatchedFlightNumber(null);
-        } else {
-          setFlight(null);
-          setFlightDate(null);
-          setUnmatchedFlightNumber(saved.flightNumber);
-        }
-      });
-    }, []),
-  );
+  const loadFlights = useCallback(async () => {
+    const savedFlightsResult = await getSavedFlights();
+    setSavedFlights(savedFlightsResult);
+    const saved = savedFlightsResult[0];
+    if (!saved) {
+      setFlight(null);
+      setFlightDate(null);
+      setUnmatchedFlightNumber(null);
+      return;
+    }
+    const result = saved.lookup ?? await getFlightStatus(saved.flightNumber, saved.date, saved.originCode);
+    if (result) {
+      setFlight(result);
+      setFlightDate(saved.date);
+      setUnmatchedFlightNumber(null);
+    } else {
+      setFlight(null);
+      setFlightDate(null);
+      setUnmatchedFlightNumber(saved.flightNumber);
+    }
+  }, []);
+
+  useFocusEffect(useCallback(() => { void loadFlights(); }, [loadFlights]));
+
+  const removeFlight = useCallback(async (saved: SavedFlight) => {
+    await clearSavedFlight(saved);
+    await loadFlights();
+  }, [loadFlights]);
+
+  const confirmRemoveFlight = useCallback((saved: SavedFlight) => {
+    const label = saved.lookup?.flight ?? saved.flightNumber;
+    Alert.alert(
+      `Remove ${label}?`,
+      'This flight will be removed from this device.',
+      [
+        { text: 'Keep flight', style: 'cancel' },
+        { text: 'Remove', style: 'destructive', onPress: () => { void removeFlight(saved); } },
+      ],
+    );
+  }, [removeFlight]);
+
+  const primarySaved = savedFlights[0];
 
   return (
     <ThemedView style={styles.container}>
@@ -69,69 +90,19 @@ export default function HomeScreen() {
             </Pressable>
           </View>
 
-          {flight ? (
-            <Card>
-              <View style={styles.rowBetween}>
-                <Pressable
-                  onPress={() => router.push('/flight-lookup')}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Edit or remove saved flight, currently ${flight.flight}`}
-                  style={styles.rowCenter}
-                  hitSlop={8}>
-                  <IconSymbol name="airplane" size={16} color={theme.primary} />
-                  <ThemedText type="smallBold">{flight.flight}</ThemedText>
-                  <IconSymbol name="pencil" size={13} color={theme.primary} />
-                </Pressable>
-                <Pill variant={flight.status === 'unknown' ? 'neutral' : flight.status === 'gate-changed' ? 'estimate' : 'success'}>
-                  {FLIGHT_STATUS_LABEL[flight.status]}
-                </Pill>
-              </View>
-
-              <View style={styles.routeRow}>
-                <View style={styles.routeEndpoint}>
-                  <ThemedText type="subtitle">{flight.origin.code}</ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {flight.origin.city}
-                  </ThemedText>
-                </View>
-                <IconSymbol name="airplane" size={18} color={theme.border} />
-                <View style={[styles.routeEndpoint, styles.routeEndpointRight]}>
-                  <ThemedText type="subtitle">{flight.destination?.code ?? '—'}</ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {flight.destination?.city ?? 'Destination not available'}
-                  </ThemedText>
-                </View>
-              </View>
-
-              <View style={styles.divider} />
-
-              <View style={styles.rowBetween}>
-                <Stat label="Boards" value={formatTime(flight.scheduledDeparture)} />
-                <Stat label="Gate" value={flight.gate ?? 'Not posted'} />
-                <Stat label="Terminal" value={flight.terminal ?? 'Not posted'} />
-              </View>
-
-              {flight.gate && (
-                <Pressable
-                onPress={() =>
-                  router.push({
-                    pathname: '/gate-change',
-                    params: { flight: flight.flight, date: flightDate ?? undefined },
-                  })
-                }
-                accessibilityRole="button"
-                accessibilityLabel="Simulate a gate change, live demo"
-                style={styles.simulateButton}>
-                <View style={styles.rowCenter}>
-                  <IconSymbol name="sparkles" size={16} color={theme.text} />
-                  <ThemedText type="smallBold">Simulate gate change</ThemedText>
-                </View>
-                <ThemedText type="small" themeColor="textSecondary">
-                  LIVE DEMO
-                </ThemedText>
-                </Pressable>
-              )}
-            </Card>
+          {flight && primarySaved ? (
+            <FlightCard
+              saved={primarySaved}
+              lookup={flight}
+              onEdit={() => router.push('/flight-lookup')}
+              onRemove={() => confirmRemoveFlight(primarySaved)}
+              onSimulate={() =>
+                router.push({
+                  pathname: '/gate-change',
+                  params: { flight: flight.flight, date: flightDate ?? undefined },
+                })
+              }
+            />
           ) : (
             <Card>
               {unmatchedFlightNumber ? (
@@ -157,12 +128,41 @@ export default function HomeScreen() {
             </Card>
           )}
 
+          {savedFlights.length > 1 && (
+            <View style={styles.legsSection}>
+              <ThemedText type="subtitle">Layover flights</ThemedText>
+              {savedFlights.slice(1).map((saved, index) => (
+                <FlightCard
+                  key={flightKey(saved)}
+                  saved={saved}
+                  lookup={saved.lookup ?? null}
+                  legLabel={`Leg ${index + 2}`}
+                  onEdit={() => router.push({ pathname: '/flight-lookup', params: legEditParams(saved) })}
+                  onRemove={() => confirmRemoveFlight(saved)}
+                  onSimulate={() =>
+                    router.push({
+                      pathname: '/gate-change',
+                      params: { flight: saved.lookup?.flight ?? saved.flightNumber, date: saved.date },
+                    })
+                  }
+                />
+              ))}
+            </View>
+          )}
+
+          {savedFlights.length > 0 && (
+            <Button
+              label="Add another flight"
+              variant="secondary"
+              onPress={() => router.push({ pathname: '/flight-lookup', params: { mode: 'add' } })}
+            />
+          )}
+
           <View style={styles.nextStepHeading}>
             <ThemedText type="subtitle">Your next step</ThemedText>
             <ThemedText type="small" themeColor="textSecondary">A calmer trip, one step at a time</ThemedText>
           </View>
           <Pressable onPress={() => router.push('/calm-guide')} accessibilityRole="button" style={styles.nextStep}>
-            <View style={styles.progressTrack}><View style={styles.progressFill} /></View>
             <View style={styles.nextStepRow}>
               <View style={styles.stepIcon}><IconSymbol name="checkmark" size={18} color={theme.surface} /></View>
               <View style={styles.stepCopy}>
@@ -209,6 +209,107 @@ export default function HomeScreen() {
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
+  );
+}
+
+function flightKey(saved: SavedFlight): string {
+  return `${saved.originCode ?? ''}-${saved.flightNumber}-${saved.date}`;
+}
+
+function legEditParams(saved: SavedFlight): Record<string, string> {
+  const params: Record<string, string> = { flightNumber: saved.flightNumber, date: saved.date };
+  if (saved.originCode) params.originCode = saved.originCode;
+  return params;
+}
+
+function FlightCard({
+  saved,
+  lookup,
+  legLabel,
+  onEdit,
+  onRemove,
+  onSimulate,
+}: {
+  saved: SavedFlight;
+  lookup: FlightLookup | null;
+  legLabel?: string;
+  onEdit: () => void;
+  onRemove: () => void;
+  onSimulate: () => void;
+}) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+  const flightLabel = lookup?.flight ?? saved.flightNumber;
+  const status = lookup?.status ?? 'unknown';
+  return (
+    <Card>
+      <View style={styles.rowBetween}>
+        <Pressable
+          onPress={onEdit}
+          accessibilityRole="button"
+          accessibilityLabel={`Edit or remove saved flight, currently ${flightLabel}`}
+          style={styles.rowCenter}
+          hitSlop={8}>
+          <IconSymbol name="airplane" size={16} color={theme.primary} />
+          <ThemedText type="smallBold">{flightLabel}</ThemedText>
+          <IconSymbol name="pencil" size={13} color={theme.primary} />
+        </Pressable>
+        <View style={styles.rowCenter}>
+          {legLabel && (
+            <ThemedText type="small" themeColor="textSecondary">{legLabel}</ThemedText>
+          )}
+          <Pill variant={status === 'unknown' ? 'neutral' : status === 'gate-changed' ? 'estimate' : 'success'}>
+            {FLIGHT_STATUS_LABEL[status]}
+          </Pill>
+          <Pressable
+            onPress={onRemove}
+            accessibilityRole="button"
+            accessibilityLabel={`Remove ${flightLabel}`}
+            hitSlop={8}
+            style={styles.removeButton}>
+            <IconSymbol name="trash" size={15} color={theme.textSecondary} />
+          </Pressable>
+        </View>
+      </View>
+
+      <View style={styles.routeRow}>
+        <View style={styles.routeEndpoint}>
+          <ThemedText type="subtitle">{lookup?.origin.code ?? saved.originCode ?? '—'}</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {lookup?.origin.city ?? 'Departure'}
+          </ThemedText>
+        </View>
+        <IconSymbol name="airplane" size={18} color={theme.border} />
+        <View style={[styles.routeEndpoint, styles.routeEndpointRight]}>
+          <ThemedText type="subtitle">{lookup?.destination?.code ?? '—'}</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            {lookup?.destination?.city ?? 'Destination not available'}
+          </ThemedText>
+        </View>
+      </View>
+
+      <View style={styles.divider} />
+
+      <View style={styles.rowBetween}>
+        <Stat label="Boards" value={lookup ? formatTime(lookup.scheduledDeparture) : 'Not posted'} />
+        <Stat label="Gate" value={lookup?.gate ?? 'Not posted'} />
+        <Stat label="Terminal" value={lookup?.terminal ?? 'Not posted'} />
+      </View>
+
+      {lookup?.gate && (
+        <Pressable
+          onPress={onSimulate}
+          accessibilityRole="button"
+          accessibilityLabel="Simulate a gate change, live demo"
+          style={styles.simulateButton}>
+          <View style={styles.rowCenter}>
+            <IconSymbol name="sparkles" size={16} color={theme.text} />
+            <ThemedText type="smallBold">Simulate gate change</ThemedText>
+          </View>
+          <ThemedText type="small" themeColor="textSecondary">LIVE DEMO</ThemedText>
+        </Pressable>
+      )}
+    </Card>
   );
 }
 
@@ -288,6 +389,8 @@ const makeStyles = (c: Palette) => StyleSheet.create({
     alignItems: 'center',
     marginTop: Spacing.two,
   },
+  legsSection: { gap: Spacing.two },
+  removeButton: { width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
   openMapButton: {
     height: 132,
     borderRadius: 20,
@@ -301,8 +404,6 @@ const makeStyles = (c: Palette) => StyleSheet.create({
   openMapButtonPressed: { opacity: 0.85 },
   nextStepHeading: { gap: 3 },
   nextStep: { backgroundColor: c.surface, borderRadius: 18, padding: Spacing.three, gap: Spacing.three, shadowColor: '#1F2A2E', shadowOpacity: 0.07, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
-  progressTrack: { height: 5, borderRadius: 3, backgroundColor: c.neutralFillAlt, overflow: 'hidden' },
-  progressFill: { height: '100%', width: '28%', backgroundColor: c.primary, borderRadius: 3 },
   nextStepRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   stepIcon: { width: 34, height: 34, borderRadius: 17, backgroundColor: c.primary, alignItems: 'center', justifyContent: 'center' },
   stepCopy: { flex: 1, gap: 2 },

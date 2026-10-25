@@ -2,6 +2,8 @@ import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import { ConvexProvider, ConvexReactClient } from 'convex/react';
+import type { ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
 
 import { LaunchScreen } from '@/components/launch-screen';
@@ -9,6 +11,16 @@ import { SettingsProvider, useSettings } from '@/contexts/settings';
 import { useTheme } from '@/hooks/use-theme';
 
 SplashScreen.preventAutoHideAsync();
+
+// Created once at module load. Null until EXPO_PUBLIC_CONVEX_URL is set in .env.local,
+// so the app runs entirely on local mock data until Convex is wired up. See src/data/client.ts.
+const convexUrl = process.env.EXPO_PUBLIC_CONVEX_URL;
+const convexClient = convexUrl ? new ConvexReactClient(convexUrl) : null;
+
+function ConvexGate({ children }: { children: ReactNode }) {
+  if (!convexClient) return <>{children}</>;
+  return <ConvexProvider client={convexClient}>{children}</ConvexProvider>;
+}
 
 function ThemedApp() {
   const palette = useTheme();
@@ -54,8 +66,10 @@ export default function RootLayout() {
   }
 
   return (
-    <SettingsProvider>
-      <ThemedApp />
-    </SettingsProvider>
+    <ConvexGate>
+      <SettingsProvider>
+        <ThemedApp />
+      </SettingsProvider>
+    </ConvexGate>
   );
 }

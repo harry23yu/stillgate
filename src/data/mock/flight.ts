@@ -22,15 +22,19 @@ const sfoDemoDeparture = nextDemoDeparture(22, 40);
 const chsDemoDeparture = nextDemoDeparture(5, 30);
 const dcaDemoDeparture = nextDemoDeparture(13, 15);
 
-/** Sample SFO-to-Singapore flight used by the dashboard and gate-change demo. */
+/**
+ * Sample SFO flight used by the dashboard and gate-change demo. Gates are demo
+ * data: the change lands at C2 (Terminal 1) so the nearest-quiet-spot rule lines
+ * up with the seeded Sensory Room — see convex/gateChange.ts WALK_MINUTES.
+ */
 export const sampleFlight: FlightLookup = {
   flight: 'UA 1',
   status: 'on-time',
   scheduledDeparture: toLocalIsoWithOffset(sfoDemoDeparture),
-  gate: 'G7',
-  terminal: 'International',
+  gate: 'B7',
+  terminal: 'Terminal 1',
   retrievedAt: new Date().toISOString(),
-  isRecorded: true,
+  isRecorded: false,
   origin: { code: 'SFO', city: 'San Francisco' },
   destination: { code: 'SIN', city: 'Singapore' },
 };
@@ -43,7 +47,7 @@ export const sampleChsFlight: FlightLookup = {
   gate: 'A3',
   terminal: 'Concourse A',
   retrievedAt: new Date().toISOString(),
-  isRecorded: true,
+  isRecorded: false,
   origin: { code: 'CHS', city: 'Charleston' },
   destination: { code: 'ATL', city: 'Atlanta' },
 };
@@ -56,16 +60,16 @@ export const sampleDcaFlight: FlightLookup = {
   gate: null,
   terminal: null,
   retrievedAt: new Date().toISOString(),
-  isRecorded: true,
+  isRecorded: false,
   origin: { code: 'DCA', city: 'Washington, D.C.' },
   destination: null,
 };
 
-/** What the flight looks like after the simulated gate change. */
+/** What the flight looks like after the simulated gate change (B7 → C2). */
 export const sampleFlightAfterGateChange: FlightLookup = {
   ...sampleFlight,
   status: 'gate-changed',
-  gate: 'G9',
+  gate: 'C2',
   retrievedAt: new Date().toISOString(),
 };
 

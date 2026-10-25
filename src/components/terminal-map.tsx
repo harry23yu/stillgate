@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMutation, useQuery } from 'convex/react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, View, type ImageSourcePropType, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
 
 import { Button } from '@/components/button';
@@ -12,6 +13,18 @@ import { useTheme } from '@/hooks/use-theme';
 import { estimateWalkMinutes, getAirport, YOU_POSITION } from '@/data/client';
 import type { Airport, AirportCode, FlightLookup, Place, PlaceType } from '@/data/types';
 import { focusForGate, mapPointForGate, mapPointForPlace, MAP_IMAGE_SIZE, type AirportMapFocus, type MapPoint } from '@/lib/sfo-map-layout';
+import { api } from '../../convex/_generated/api';
+
+// Live traveler "is this still accurate?" reports are backed by Convex. Only airports seeded into
+// the Convex "airports" table accept reports today (the SFO sample); others fall back to a static note.
+const hasConvex = Boolean(process.env.EXPO_PUBLIC_CONVEX_URL);
+const REPORTS_ENABLED_AIRPORTS: AirportCode[] = ['SFO'];
+
+// shared/data/sfo.json seeds spot ids prefixed with the airport code
+// (local "sensory-room-t1" -> seeded "sfo-sensory-room-t1"). Map local -> seeded until the two are unified.
+function convexSpotId(airportCode: AirportCode, place: Place): string {
+  return `${airportCode.toLowerCase()}-${place.id}`;
+}
 
 const FILTERS: { type: PlaceType; label: string }[] = [
   { type: 'quiet', label: 'Quiet spots' },
@@ -630,16 +643,85 @@ function PlaceCard({
           ~{walkMinutes} min walk (estimate)
         </ThemedText>
       )}
-      <ThemedText type="small" themeColor="textSecondary">
-        Last verified {place.lastVerified}
-      </ThemedText>
-      <View style={styles.cardActions}>
-        {place.type !== 'loud' && (
+      {place.type !== 'loud' && (
+        <View style={styles.cardActions}>
           <Button label="Take me there" onPress={onTakeMeThere} style={styles.cardButton} />
-        )}
-        <Button label="Report a problem" variant="secondary" onPress={onReport} style={styles.cardButton} />
-      </View>
+        </View>
+      )}
+      {hasConvex && REPORTS_ENABLED_AIRPORTS.includes(airportCode) ? (
+        <SpotReportSection place={place} airportCode={airportCode} />
+      ) : (
+        <>
+          <ThemedText type="small" themeColor="textSecondary">
+            Last verified {place.lastVerified}
+          </ThemedText>
+          <View style={styles.cardActions}>
+            <Button label="Report a problem" variant="secondary" onPress={onReport} style={styles.cardButton} />
+          </View>
+        </>
+      )}
     </Card>
+  );
+}
+
+// Live trust signal + report control for one spot. Rendered only when Convex is configured and the
+// airport is seeded, so useQuery/useMutation always have a ConvexProvider above them.
+function SpotReportSection({ place, airportCode }: { place: Place; airportCode: AirportCode }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+  const spotId = convexSpotId(airportCode, place);
+  const summary = useQuery(api.reports.spotReportSummary, { airportCode, spotId });
+  const submitReport = useMutation(api.reports.submitReport);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const accurate = summary?.accurate ?? 0;
+  const wrong = summary?.wrong ?? 0;
+  const total = summary?.total ?? 0;
+  // Enough recent "wrong" reports, and not outweighed by confirmations: warn the next traveler.
+  const flagged = wrong >= 2 && wrong >= accurate;
+
+  async function report(verdict: 'accurate' | 'wrong') {
+    setPending(true);
+    setError(null);
+    try {
+      await submitReport({ airportCode, spotId, verdict });
+    } catch {
+      setError('We couldn’t record that just now. Please try again.');
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <View style={styles.trustSection}>
+      {summary === undefined ? (
+        <ThemedText type="small" themeColor="textSecondary">Checking traveler reports…</ThemedText>
+      ) : flagged ? (
+        <View style={styles.trustRow}>
+          <IconSymbol name="exclamationmark.triangle.fill" size={15} color={theme.estimateText} />
+          <ThemedText type="small" style={[styles.trustText, { color: theme.estimateText }]}>
+            {wrong} traveler{wrong === 1 ? '' : 's'} said this was off recently — double-check before relying on it.
+          </ThemedText>
+        </View>
+      ) : (
+        <View style={styles.trustRow}>
+          <IconSymbol name="checkmark.seal.fill" size={15} color={theme.primary} />
+          <ThemedText type="small" themeColor="textSecondary" style={styles.trustText}>
+            {total > 0
+              ? `${accurate} traveler${accurate === 1 ? '' : 's'} confirmed this recently · verified ${place.lastVerified}`
+              : `Verified ${place.lastVerified} · no traveler reports yet`}
+          </ThemedText>
+        </View>
+      )}
+
+      <ThemedText type="small" themeColor="textSecondary">Is this still right?</ThemedText>
+      <View style={styles.cardActions}>
+        <Button label="Still accurate" variant="secondary" onPress={() => void report('accurate')} disabled={pending} style={styles.cardButton} />
+        <Button label="This was off" variant="secondary" onPress={() => void report('wrong')} disabled={pending} style={styles.cardButton} />
+      </View>
+      {error && <ThemedText type="small" style={{ color: theme.estimateText }}>{error}</ThemedText>}
+    </View>
   );
 }
 
@@ -801,5 +883,16 @@ const makeStyles = (theme: Palette) => StyleSheet.create({
   },
   cardButton: {
     flexGrow: 1,
+  },
+  trustSection: {
+    gap: Spacing.two,
+  },
+  trustRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.one,
+  },
+  trustText: {
+    flex: 1,
   },
 });

@@ -37,7 +37,7 @@ export default function TabLayout() {
         name="calm-guide"
         options={{
           title: 'My trip',
-          tabBarIcon: ({ color }) => <IconSymbol name="map.fill" size={24} color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol name="figure.walk" size={24} color={color} />,
         }}
       />
       <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: ({ color }) => <IconSymbol name="person.crop.circle" size={24} color={color} /> }} />
