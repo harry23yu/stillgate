@@ -1,0 +1,371 @@
+{
+  "$ref": "#/definitions/Airport",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "Airport": {
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string"
+        },
+        "lastVerified": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "links": {
+          "items": {
+            "$ref": "#/definitions/ExternalLink"
+          },
+          "type": "array"
+        },
+        "loudZones": {
+          "items": {
+            "$ref": "#/definitions/LoudZone"
+          },
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        },
+        "quietSpots": {
+          "items": {
+            "$ref": "#/definitions/QuietSpot"
+          },
+          "type": "array"
+        },
+        "services": {
+          "items": {
+            "$ref": "#/definitions/Service"
+          },
+          "type": "array"
+        },
+        "terminals": {
+          "items": {
+            "$ref": "#/definitions/Terminal"
+          },
+          "type": "array"
+        },
+        "verifiedStatus": {
+          "$ref": "#/definitions/VerifiedStatus"
+        },
+        "walkthrough": {
+          "items": {
+            "$ref": "#/definitions/WalkthroughStep"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "code",
+        "name",
+        "terminals",
+        "lastVerified",
+        "verifiedStatus",
+        "quietSpots",
+        "loudZones",
+        "services",
+        "walkthrough",
+        "links"
+      ],
+      "type": "object"
+    },
+    "Confidence": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "type": "string"
+    },
+    "ExternalLink": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "provider": {
+          "enum": [
+            "magnuscards",
+            "kulturecity",
+            "airport",
+            "tsa",
+            "other"
+          ],
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "url",
+        "provider"
+      ],
+      "type": "object"
+    },
+    "Location": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lng": {
+          "type": "number"
+        },
+        "nearGate": {
+          "type": "string"
+        },
+        "postSecurity": {
+          "type": "boolean"
+        },
+        "terminalId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "terminalId",
+        "postSecurity"
+      ],
+      "type": "object"
+    },
+    "LoudZone": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "$ref": "#/definitions/Confidence"
+        },
+        "estimatedBusyTimes": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "location": {
+          "$ref": "#/definitions/Location"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/definitions/LoudZoneType"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "name",
+        "location",
+        "confidence"
+      ],
+      "type": "object"
+    },
+    "LoudZoneType": {
+      "enum": [
+        "food_court",
+        "security_checkpoint",
+        "train_station",
+        "announcement_area",
+        "other"
+      ],
+      "type": "string"
+    },
+    "QuietSpot": {
+      "additionalProperties": false,
+      "properties": {
+        "hours": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/definitions/QuietSpotKind"
+        },
+        "location": {
+          "$ref": "#/definitions/Location"
+        },
+        "name": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/definitions/Source"
+        },
+        "verifiedDate": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "name",
+        "location",
+        "verifiedDate",
+        "source"
+      ],
+      "type": "object"
+    },
+    "QuietSpotKind": {
+      "enum": [
+        "sensory_room",
+        "quiet_area",
+        "other"
+      ],
+      "type": "string"
+    },
+    "Service": {
+      "additionalProperties": false,
+      "properties": {
+        "hours": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/definitions/ServiceKind"
+        },
+        "location": {
+          "$ref": "#/definitions/Location"
+        },
+        "name": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/definitions/Source"
+        },
+        "verifiedDate": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "name",
+        "location",
+        "verifiedDate",
+        "source"
+      ],
+      "type": "object"
+    },
+    "ServiceKind": {
+      "enum": [
+        "tsa_cares_meeting_point",
+        "special_assistance_desk",
+        "family_accessible_lane",
+        "restroom",
+        "water",
+        "low_stimulation_food"
+      ],
+      "type": "string"
+    },
+    "Source": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "label",
+        "url"
+      ],
+      "type": "object"
+    },
+    "Terminal": {
+      "additionalProperties": false,
+      "properties": {
+        "gates": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "gates"
+      ],
+      "type": "object"
+    },
+    "VerifiedStatus": {
+      "enum": [
+        "verified",
+        "basic"
+      ],
+      "type": "string"
+    },
+    "WalkthroughPhase": {
+      "enum": [
+        "check_in",
+        "security",
+        "boarding"
+      ],
+      "type": "string"
+    },
+    "WalkthroughStep": {
+      "additionalProperties": false,
+      "properties": {
+        "detailedText": {
+          "type": "string"
+        },
+        "order": {
+          "type": "number"
+        },
+        "phase": {
+          "$ref": "#/definitions/WalkthroughPhase"
+        },
+        "photoUrl": {
+          "type": "string"
+        },
+        "source": {
+          "$ref": "#/definitions/Source"
+        },
+        "text": {
+          "type": "string"
+        },
+        "verifiedDate": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "phase",
+        "order",
+        "text",
+        "verifiedDate",
+        "source"
+      ],
+      "type": "object"
+    }
+  }
+}
