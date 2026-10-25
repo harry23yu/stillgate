@@ -16,6 +16,16 @@ This is a hackathon prototype, not an airline or airport-operated service. Fligh
 - **Airport-data review pipeline:** an Apify Actor collects information from configured airport webpages and sends candidate updates to Convex for human review. Scraped changes are drafts; they do not become traveler-facing approved information automatically.
 - **Flight lookup:** when configured, the app can request flight data through the Convex/Apify backend. Labeled sample flights are available for the demo and local development.
 
+## Prototype screenshots
+
+| Sensory profile | Airport map | Quiet-place details |
+| --- | --- | --- |
+| <img src="assets/Screenshots/sensoryProfile.png" alt="Stillgate sensory profile screen with noise, crowds, lighting, and support preferences" width="220"> | <img src="assets/Screenshots/airportMap.png" alt="Stillgate SFO map screen showing airport areas and a sample flight" width="220"> | <img src="assets/Screenshots/Quiet.png" alt="Stillgate map details for a quiet seating area, with an estimated walk time and verification status" width="220"> |
+
+| Calm Guide | Simulated gate change |
+| --- | --- |
+| <img src="assets/Screenshots/guide.png" alt="Stillgate Calm Guide with a spoken security step and a Need a minute card" width="220"> | <img src="assets/Screenshots/calmPhrasing.png" alt="Stillgate simulated gate-change screen suggesting a quiet place near the new gate" width="220"> |
+
 ## Technology
 
 | Area | Technology | Role |
@@ -110,5 +120,4 @@ stillgate/
 - Walk times and some flight or gate scenarios are estimates or demo data. The app does not provide guaranteed indoor navigation or live airline gate-change notifications.
 - The prototype should not be treated as emergency, security, visa, or official airport advice. Follow airport, airline and government instructions.
 - Before a public launch, review access controls, rate limits, data verification, moderation, and third-party API costs. Current public demo actions may need additional protections.
-
 
