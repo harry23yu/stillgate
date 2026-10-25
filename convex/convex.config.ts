@@ -1,5 +1,6 @@
 import { defineApp } from "convex/server";
 import { v } from "convex/values";
+import rateLimiter from "@convex-dev/rate-limiter/convex.config.js";
 
 // IMPORT_SECRET: shared secret the Apify Actor sends in the x-import-secret header.
 //   Set with: npx convex env set IMPORT_SECRET <long random string>
@@ -28,5 +29,8 @@ const app = defineApp({
     CARTESIA_VOICE_ID: v.optional(v.string()),
   },
 });
+
+// Rate limits are defined in convex/limits.ts.
+app.use(rateLimiter);
 
 export default app;

@@ -110,7 +110,7 @@ to 300 characters) and `detailLevel` (`brief`, `standard` or `detailed`). Return
 `{ steps, rewritten, reason }`.
 
 - Build the step text from the data in code (gate, place name, minutes, hours), then call this to soften it.
-- Every number and gate token in each step must survive the rewrite, or the original text is returned.
+- Every number and gate token in each step must survive the rewrite, and so must caveat words ("estimate", "verified", "unknown"), or the original text is returned.
 - On any failure (no key, API error, refusal, bad output, failed check) you get the original steps back with
   `rewritten: false` and a `reason`. Always show `steps`; use `rewritten` only for debugging.
 - Needs `ANTHROPIC_API_KEY` on the deployment (`npx convex env set ANTHROPIC_API_KEY <key>`).
@@ -135,19 +135,42 @@ to Cartesia once. Play each demo step once before presenting and the demo no lon
 ### Reports ("Was this accurate?")
 
 ```bash
-npx convex run reports:submitReport '{"airportCode":"SFO","spotId":"sfo-sensory-room-t1","verdict":"wrong","note":"Room was closed for cleaning"}'
+npx convex run reports:submitReport '{"airportCode":"SFO","spotId":"sfo-sensory-room-t1","verdict":"wrong","note":"Room was closed for cleaning","deviceId":"test-device-0000000001"}'
 npx convex run reports:listRecentReports '{"airportCode":"SFO","spotId":"sfo-sensory-room-t1","limit":5}'
 npx convex run reports:spotReportSummary '{"airportCode":"SFO","spotId":"sfo-sensory-room-t1"}'
 ```
 
 - `reports:submitReport` (mutation): `verdict` is `"accurate"` or `"wrong"`; `note` is optional, max 280 characters.
-  `spotId` must be the id of a quiet spot, loud zone or service in that airport's record. Unknown airport or
-  spot, an over-long note, or a bad verdict is rejected and nothing is written.
+  `deviceId` is required: a random per-install id (16 to 64 letters, digits or hyphens; the app creates it in
+  `src/data/device-id.ts`).
+  `spotId` is either the id of a quiet spot, loud zone or service in that airport's record, or the document id of
+  an approved, scraped place at that airport. Unknown airport or spot, an over-long note, a bad verdict or a bad
+  device id is rejected and nothing is written.
+- One report per device per spot per day: the same device reporting the same spot again within the day updates its
+  earlier answer and returns the same report id instead of adding another vote.
+- A "wrong" report on a scraped place puts it back in the review queue (it stays published until a reviewer decides).
+  Reports never change an airport record by themselves; they are signals for a person to re-verify the pin.
 - `reports:listRecentReports` (query): newest first. `spotId` is optional; `limit` defaults to 20, max 50.
   It is live: a client subscribed to it updates when a report arrives.
 - `reports:spotReportSummary` (query): `{accurate, wrong, total, truncated}` from the 200 most recent reports for the spot.
-- Reports never change an airport record. They are signals for a person to re-verify the pin.
-- Unauthenticated, so anyone can submit and nothing limits one person's volume. Fine for the event; add rate limiting and moderation before launch.
+- No accounts. The device id and the rate limits (below) keep volume down, but a determined person can still make
+  new device ids; add moderation before a public launch.
+
+## Rate limits
+
+The public functions that spend credits or accept writes are limited with Convex's rate-limiter component.
+All limits are defined in `convex/limits.ts`; there are no accounts, so they are global or per pin.
+
+| Limit | Applies to | Allowed |
+|---|---|---|
+| `phraseSteps` | `phrase:phraseSteps` (Claude credits) | 20 per minute, burst of 10. Over the limit it returns the original steps with `reason: "rate limited"`. |
+| `submitReport` | `reports:submitReport`, overall | 60 per minute, burst of 20 |
+| `submitReportPerSpot` | `reports:submitReport`, per pin | 6 per minute, burst of 6 |
+| `synthesizeSpeech` | `voice:speak` (Cartesia credits). Only new clips count; replays of saved clips don't. | 30 per minute, burst of 10. Over the limit it returns `unavailable` with "Voice is busy right now". |
+
+- Over the limit, `submitReport` throws a `ConvexError` ("Too many reports ...").
+- The limiter is transactional: a mutation that fails (for example an unknown spot) does not use up tokens.
+- To protect a new function: `const { ok } = await rateLimiter.limit(ctx, "name")` (add `{ key }` for per-key limits), importing `rateLimiter` from `./limits`.
 
 ## Importing airport data (for the Apify Actor)
 

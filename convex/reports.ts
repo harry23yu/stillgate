@@ -1,5 +1,6 @@
 import { ConvexError, v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { rateLimiter } from "./limits";
 
 const MAX_NOTE_CHARS = 280;
 const MAX_LIMIT = 50;
@@ -20,6 +21,9 @@ export const submitReport = mutation({
     deviceId: v.string(),
   },
   handler: async (ctx, args) => {
+    const overall = await rateLimiter.limit(ctx, "submitReport");
+    if (!overall.ok) throw new ConvexError("Too many reports right now. Please try again in a minute.");
+
     const airportCode = args.airportCode.toUpperCase();
     if (!/^[A-Za-z0-9-]{16,64}$/.test(args.deviceId)) throw new ConvexError("Invalid device id.");
 
@@ -48,6 +52,10 @@ export const submitReport = mutation({
         airport.services.some((s) => s.id === args.spotId);
       if (!known) throw new ConvexError("Unknown spot for this airport.");
     }
+
+    // Per-pin limit, after validation so only real pins create limiter keys.
+    const perSpot = await rateLimiter.limit(ctx, "submitReportPerSpot", { key: `${airportCode}:${args.spotId}` });
+    if (!perSpot.ok) throw new ConvexError("Too many reports for this spot right now. Please try again in a minute.");
 
     const note = args.note?.trim();
     if (note && note.length > MAX_NOTE_CHARS) {

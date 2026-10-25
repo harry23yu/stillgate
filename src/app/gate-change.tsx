@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
-import { useQuery } from 'convex/react';
+import { useAction, useQuery } from 'convex/react';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -42,6 +42,7 @@ export default function GateChangeScreen() {
   const [after, setAfter] = useState<FlightLookup | null>(null);
   const [profile, setProfile] = useState<Profile>(defaultProfile);
   const [gentleAlertsOnly, setGentleAlertsOnly] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -63,6 +64,7 @@ export default function GateChangeScreen() {
       if (!active) return;
       setBefore(beforeFlight);
       setAfter(afterFlight);
+      setNotFound(!beforeFlight?.gate || !afterFlight?.gate);
       if (beforeFlight) {
         const airportCode = beforeFlight.origin.code === 'CHS' ? 'CHS' : 'SFO';
         const matchingAirport = await getAirport(airportCode);
@@ -76,6 +78,28 @@ export default function GateChangeScreen() {
   }, [flightNumber, date]);
 
   const theme = useTheme();
+
+  if (notFound) {
+    return (
+      <ThemedView style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.content}>
+            <Card>
+              <ThemedText type="subtitle">We couldn&apos;t set up this gate change</ThemedText>
+              <ThemedText themeColor="textSecondary">
+                The gate-change demo works for the sample flights. Go back and pick one, or add the flight again.
+              </ThemedText>
+              <Button
+                label="Go back"
+                variant="secondary"
+                onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
+              />
+            </Card>
+          </View>
+        </SafeAreaView>
+      </ThemedView>
+    );
+  }
 
   if (!airport || !before || !after || !before.gate || !after.gate) {
     return <ThemedView style={styles.container} />;
@@ -231,6 +255,30 @@ function LiveQuietSpotRecommendation({
     },
   });
 
+  // Claude only softens the wording of steps our data already produced (convex/phrase.ts). Facts
+  // are checked server-side; if anything fails we keep showing the original steps.
+  const phraseSteps = useAction(api.phrase.phraseSteps);
+  const shownSteps = result?.steps.slice(1) ?? [];
+  const stepsKey = JSON.stringify(shownSteps);
+  const [reworded, setReworded] = useState<{ key: string; steps: string[] } | null>(null);
+
+  useEffect(() => {
+    const steps = JSON.parse(stepsKey) as string[];
+    if (steps.length === 0) return;
+    let active = true;
+    phraseSteps({ steps, detailLevel: profile.detailLevel })
+      .then((out) => {
+        if (active && out.rewritten) setReworded({ key: stepsKey, steps: out.steps });
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [stepsKey, profile.detailLevel, phraseSteps]);
+
+  const isReworded = reworded?.key === stepsKey;
+  const displaySteps = isReworded ? reworded.steps : shownSteps;
+
   if (!result?.spot) {
     return fallbackPlace ? (
       <QuietSpotCard
@@ -248,9 +296,14 @@ function LiveQuietSpotRecommendation({
         Picked for your profile
       </ThemedText>
       <ThemedText type="subtitle">{result.spot.name}</ThemedText>
-      {result.steps.slice(1).map((step) => (
+      {displaySteps.map((step) => (
         <ThemedText key={step} themeColor="textSecondary">{step}</ThemedText>
       ))}
+      {isReworded && (
+        <ThemedText type="small" themeColor="textSecondary">
+          Wording softened by Claude. The facts come from our airport data.
+        </ThemedText>
+      )}
       <Button
         label="Take me to the quiet spot"
         variant="secondary"
