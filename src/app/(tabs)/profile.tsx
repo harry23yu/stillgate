@@ -5,11 +5,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { Chip } from '@/components/chip';
+import { IconSymbol } from '@/components/icon-symbol';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
 import { defaultProfile, getProfile, saveProfile } from '@/data/profile';
 import type { Profile } from '@/data/types';
+import { useTheme } from '@/hooks/use-theme';
 
 type SensitivityLevel = NonNullable<Profile['noise']>;
 
@@ -24,6 +26,7 @@ const HELP_OPTIONS = ['Headphones', 'Extra time', 'Quiet room', 'Written steps']
 export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile>(defaultProfile);
+  const theme = useTheme();
 
   useEffect(() => {
     getProfile().then((saved) => {
@@ -35,21 +38,21 @@ export default function ProfileScreen() {
   function toggleHelp(help: string) {
     setProfile((current) => ({
       ...current,
-      helps: current.helps.includes(help)
-        ? current.helps.filter((item) => item !== help)
-        : [...current.helps, help],
+      whatHelps: current.whatHelps.includes(help)
+        ? current.whatHelps.filter((item) => item !== help)
+        : [...current.whatHelps, help],
     }));
   }
 
   async function handleSave() {
-    await saveProfile({ ...profile, detailLevel: profile.firstFlight ? 'detailed' : 'standard' });
+    await saveProfile({ ...profile, detailLevel: profile.firstFlight ? 'detailed' : 'brief' });
     router.replace('/');
   }
 
   if (loading) {
     return (
       <ThemedView style={styles.loadingContainer}>
-        <ActivityIndicator color={Colors.primary} />
+        <ActivityIndicator color={theme.primary} />
       </ThemedView>
     );
   }
@@ -62,12 +65,10 @@ export default function ProfileScreen() {
           <Pressable
             onPress={() => router.back()}
             accessibilityRole="button"
-            accessibilityLabel="Save sensory profile"
+            accessibilityLabel="Close sensory profile"
             hitSlop={12}
             style={styles.skipButton}>
-            <ThemedText type="smallBold" themeColor="primary">
-              Save
-            </ThemedText>
+            <IconSymbol name="xmark" size={20} color={theme.primary} />
           </Pressable>
         </View>
         <ThemedText themeColor="textSecondary" style={styles.intro}>
@@ -87,8 +88,8 @@ export default function ProfileScreen() {
           />
           <SensitivityQuestion
             label="Bright or flickering lights"
-            value={profile.lights}
-            onChange={(lights) => setProfile((current) => ({ ...current, lights }))}
+            value={profile.lighting}
+            onChange={(lighting) => setProfile((current) => ({ ...current, lighting }))}
           />
 
           <View style={styles.section}>
@@ -101,7 +102,7 @@ export default function ProfileScreen() {
                 <Chip
                   key={help}
                   label={help}
-                  selected={profile.helps.includes(help)}
+                  selected={profile.whatHelps.includes(help)}
                   onPress={() => toggleHelp(help)}
                 />
               ))}

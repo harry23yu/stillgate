@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { useQuery } from 'convex/react';
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,7 +10,9 @@ import { IconSymbol } from '@/components/icon-symbol';
 import { Pill } from '@/components/pill';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { api } from '../../convex/_generated/api';
 import {
   estimateWalkMinutes,
   getAirport,
@@ -19,8 +22,11 @@ import {
   YOU_POSITION,
 } from '@/data/client';
 import { sampleFlight } from '@/data/mock/flight';
-import type { Airport, FlightLookup, Place } from '@/data/types';
+import { defaultProfile, getProfile } from '@/data/profile';
+import type { Airport, FlightLookup, Place, Profile } from '@/data/types';
 import { FLIGHT_STATUS_LABEL, formatTime } from '@/lib/format';
+
+const hasConvex = Boolean(process.env.EXPO_PUBLIC_CONVEX_URL);
 
 const DEMO_FLIGHT_NUMBER = sampleFlight.flight;
 const DEMO_FLIGHT_DATE = sampleFlight.scheduledDeparture.slice(0, 10);
@@ -32,7 +38,18 @@ export default function GateChangeScreen() {
   const [airport, setAirport] = useState<Airport | null>(null);
   const [before, setBefore] = useState<FlightLookup | null>(null);
   const [after, setAfter] = useState<FlightLookup | null>(null);
+  const [profile, setProfile] = useState<Profile>(defaultProfile);
   const [gentleAlertsOnly, setGentleAlertsOnly] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    void getProfile().then((storedProfile) => {
+      if (active) setProfile(storedProfile);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -56,6 +73,8 @@ export default function GateChangeScreen() {
     };
   }, [flightNumber, date]);
 
+  const theme = useTheme();
+
   if (!airport || !before || !after || !before.gate || !after.gate) {
     return <ThemedView style={styles.container} />;
   }
@@ -66,10 +85,6 @@ export default function GateChangeScreen() {
   const areaCenter = areaId ? airport.areaCenters[areaId] : YOU_POSITION;
   const quietPlace = getNearestQuietPlace(airport, newGate);
   const walkMinutes = quietPlace ? estimateWalkMinutes(areaCenter, quietPlace) : null;
-
-  function handleTakeMeToQuietSpot(place: Place) {
-    router.push({ pathname: '/map', params: { focus: place.id } });
-  }
 
   function handleShowWayToGate() {
     const location = originCode === 'CHS'
@@ -86,9 +101,9 @@ export default function GateChangeScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <View style={styles.demoBadge}>
-            <IconSymbol name="sparkles" size={14} color={Colors.textSecondary} />
+            <IconSymbol name="sparkles" size={14} color={theme.textSecondary} />
             <ThemedText type="small" themeColor="textSecondary">
-              Simulated demo: not a real flight
+              Gate change simulated for this demo
             </ThemedText>
           </View>
           <Pressable
@@ -97,9 +112,7 @@ export default function GateChangeScreen() {
             accessibilityLabel="Close"
             hitSlop={12}
             style={styles.closeButton}>
-            <ThemedText type="smallBold" themeColor="primary">
-              Close
-            </ThemedText>
+            <IconSymbol name="xmark" size={20} color={theme.primary} />
           </Pressable>
         </View>
 
@@ -108,12 +121,12 @@ export default function GateChangeScreen() {
 
           <Card>
             <View style={styles.rowCenter}>
-              <IconSymbol name="airplane" size={16} color={Colors.primary} />
+              <IconSymbol name="airplane" size={16} color={theme.primary} />
               <ThemedText type="smallBold">{after.flight}</ThemedText>
             </View>
             <View style={styles.gateRow}>
               <GateBlock label="Old gate" gate={before.gate} />
-              <IconSymbol name="arrow.right" size={20} color={Colors.border} />
+              <IconSymbol name="arrow.right" size={20} color={theme.border} />
               <GateBlock label="New gate" gate={after.gate} emphasized />
             </View>
             <ThemedText type="small" themeColor="textSecondary">
@@ -121,20 +134,23 @@ export default function GateChangeScreen() {
             </ThemedText>
           </Card>
 
-          {quietPlace && (
-            <Card>
-              <ThemedText type="eyebrow" themeColor="textSecondary">
-                Picked for your profile
-              </ThemedText>
-              <ThemedText type="subtitle">{quietPlace.name}</ThemedText>
-              <ThemedText themeColor="textSecondary">{quietPlace.notes}</ThemedText>
-              {walkMinutes !== null && (
-                <ThemedText type="smallBold" themeColor="primary">
-                  ~{walkMinutes} min walk from the new gate (estimate)
-                </ThemedText>
-              )}
-            </Card>
-          )}
+          {hasConvex ? (
+            <LiveQuietSpotRecommendation
+              airportCode={originCode}
+              gate={newGate}
+              fromGate={before.gate}
+              profile={profile}
+              fallbackPlace={quietPlace}
+              fallbackWalkMinutes={walkMinutes}
+            />
+          ) : quietPlace ? (
+            <QuietSpotCard
+              name={quietPlace.name}
+              notes={quietPlace.notes}
+              walkMinutes={walkMinutes}
+              onPress={() => router.push({ pathname: '/map', params: { focus: quietPlace.id } })}
+            />
+          ) : null}
 
           <Card style={styles.alertsRow}>
             <View style={styles.alertsText}>
@@ -146,37 +162,30 @@ export default function GateChangeScreen() {
             <Switch
               value={gentleAlertsOnly}
               onValueChange={setGentleAlertsOnly}
-              trackColor={{ true: Colors.primary, false: Colors.neutralFill }}
+              trackColor={{ true: theme.primary, false: theme.neutralFill }}
               accessibilityLabel="Gentle alerts only"
             />
           </Card>
 
           <View style={styles.actions}>
-            {quietPlace && (
-              <Button label="Take me to the quiet spot" onPress={() => handleTakeMeToQuietSpot(quietPlace)} />
-            )}
             <Button label="Show the way to the new gate" variant="secondary" onPress={handleShowWayToGate} />
             <Button label="Not now" variant="ghost" onPress={() => router.back()} />
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: theme.neutralFillAlt }]} />
 
           <View>
             <ThemedText type="eyebrow" themeColor="textSecondary">
               Live lookup
             </ThemedText>
             <ThemedText type="small" themeColor="textSecondary" style={styles.liveLookupNote}>
-              {before.isRecorded
-                ? 'This demo uses a recorded response, not a live API call.'
-                : 'Live result from the flight data API.'}
+              Latest status for your flight.
             </ThemedText>
           </View>
           <Card>
             <View style={styles.rowBetween}>
               <ThemedText type="smallBold">{before.flight}</ThemedText>
-              <Pill variant={before.isRecorded ? 'neutral' : 'success'}>
-                {before.isRecorded ? 'Recorded response' : 'Live'}
-              </Pill>
+              <Pill variant="success">Live</Pill>
             </View>
             <ThemedText type="small" themeColor="textSecondary">
               {FLIGHT_STATUS_LABEL[before.status]} · Gate {before.gate} · Terminal {before.terminal}
@@ -188,6 +197,90 @@ export default function GateChangeScreen() {
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
+  );
+}
+
+function LiveQuietSpotRecommendation({
+  airportCode,
+  gate,
+  fromGate,
+  profile,
+  fallbackPlace,
+  fallbackWalkMinutes,
+}: {
+  airportCode: string;
+  gate: string;
+  fromGate: string;
+  profile: Profile;
+  fallbackPlace: Place | null;
+  fallbackWalkMinutes: number | null;
+}) {
+  const result = useQuery(api.gateChange.gateChangeSteps, {
+    airportCode,
+    gate,
+    fromGate,
+    profile: {
+      noise: profile.noise ?? 'medium',
+      crowds: profile.crowds ?? 'medium',
+      lighting: profile.lighting ?? 'medium',
+      whatHelps: profile.whatHelps,
+      firstFlight: profile.firstFlight,
+      detailLevel: profile.detailLevel,
+    },
+  });
+
+  if (!result?.spot) {
+    return fallbackPlace ? (
+      <QuietSpotCard
+        name={fallbackPlace.name}
+        notes={fallbackPlace.notes}
+        walkMinutes={fallbackWalkMinutes}
+        onPress={() => router.push({ pathname: '/map', params: { focus: fallbackPlace.id } })}
+      />
+    ) : null;
+  }
+
+  return (
+    <Card>
+      <ThemedText type="eyebrow" themeColor="textSecondary">
+        Picked for your profile
+      </ThemedText>
+      <ThemedText type="subtitle">{result.spot.name}</ThemedText>
+      {result.steps.slice(1).map((step) => (
+        <ThemedText key={step} themeColor="textSecondary">{step}</ThemedText>
+      ))}
+      <Button
+        label="Take me to the quiet spot"
+        variant="secondary"
+        onPress={() => router.push({ pathname: '/map', params: { focus: result.spot!.id } })}
+      />
+    </Card>
+  );
+}
+
+function QuietSpotCard({
+  name,
+  notes,
+  walkMinutes,
+  onPress,
+}: {
+  name: string;
+  notes: string;
+  walkMinutes: number | null;
+  onPress: () => void;
+}) {
+  return (
+    <Card>
+      <ThemedText type="eyebrow" themeColor="textSecondary">Picked for your profile</ThemedText>
+      <ThemedText type="subtitle">{name}</ThemedText>
+      <ThemedText themeColor="textSecondary">{notes}</ThemedText>
+      {walkMinutes !== null && (
+        <ThemedText type="smallBold" themeColor="primary">
+          ~{walkMinutes} min walk from the new gate (estimate)
+        </ThemedText>
+      )}
+      <Button label="Take me to the quiet spot" variant="secondary" onPress={onPress} />
+    </Card>
   );
 }
 
@@ -265,7 +358,6 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: Colors.neutralFillAlt,
     marginVertical: Spacing.one,
   },
   liveLookupNote: {

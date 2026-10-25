@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,11 +9,12 @@ import { Pill } from '@/components/pill';
 import { TextField } from '@/components/text-field';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { getFlightStatus } from '@/data/client';
 import { lookupFlight, type FlightLookupResult } from '@/data/flight-provider';
 import { sampleChsFlight, sampleDcaFlight, sampleFlight } from '@/data/mock/flight';
-import { clearSavedFlight, getSavedFlight, saveFlight } from '@/data/saved-flight';
+import { clearSavedFlight, getSavedFlights, saveFlight, type SavedFlight } from '@/data/saved-flight';
 import type { FlightLookup } from '@/data/types';
 import { formatTime } from '@/lib/format';
 
@@ -26,6 +27,13 @@ function todayIsoDate(): string {
 }
 
 export default function FlightLookupScreen() {
+  const { mode, flightNumber: flightParam, originCode: originParam, date: dateParam } = useLocalSearchParams<{
+    mode?: string;
+    flightNumber?: string;
+    originCode?: string;
+    date?: string;
+  }>();
+  const addingFlight = mode === 'add';
   const [flightNumber, setFlightNumber] = useState('');
   const [originCode, setOriginCode] = useState('');
   const [date, setDate] = useState('');
@@ -33,16 +41,22 @@ export default function FlightLookupScreen() {
   const [error, setError] = useState<string | null>(null);
   const [searching, setSearching] = useState(false);
   const [hasSavedFlight, setHasSavedFlight] = useState(false);
+  const [selectedSavedFlight, setSelectedSavedFlight] = useState<SavedFlight | null>(null);
+  const theme = useTheme();
 
   useEffect(() => {
     let active = true;
     async function loadSavedFlight() {
       try {
-        const saved = await getSavedFlight();
+        const savedFlights = addingFlight ? [] : await getSavedFlights();
+        const saved = flightParam && dateParam
+          ? savedFlights.find((item) => item.flightNumber === flightParam && item.date === dateParam && (!originParam || item.originCode === originParam))
+          : savedFlights[0];
         if (!saved || !active) return;
         const flight = saved.lookup ?? await getFlightStatus(saved.flightNumber, saved.date, saved.originCode);
         if (!active) return;
         setHasSavedFlight(true);
+        setSelectedSavedFlight(saved);
         setFlightNumber(saved.flightNumber);
         setOriginCode(saved.originCode ?? flight?.origin.code ?? '');
         setDate(saved.date);
@@ -55,7 +69,7 @@ export default function FlightLookupScreen() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [addingFlight, dateParam, flightParam, originParam]);
 
   async function handleSearch() {
     const normalizedFlight = flightNumber.trim().toUpperCase().replace(/\s+/g, ' ');
@@ -130,8 +144,9 @@ export default function FlightLookupScreen() {
 
   async function removeSavedFlight() {
     try {
-      await clearSavedFlight();
+      await clearSavedFlight(selectedSavedFlight ?? undefined);
       setHasSavedFlight(false);
+      setSelectedSavedFlight(null);
       setFlightNumber('');
       setOriginCode('');
       setDate('');
@@ -155,7 +170,7 @@ export default function FlightLookupScreen() {
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
-            <ThemedText type="title">Your flight</ThemedText>
+            <ThemedText type="title">{addingFlight ? 'Add a flight' : 'Your flight'}</ThemedText>
             <Pressable
               onPress={() => router.back()}
               accessibilityRole="button"
@@ -167,7 +182,7 @@ export default function FlightLookupScreen() {
           </View>
 
           <ThemedText themeColor="textSecondary" style={styles.intro}>
-            Search by flight number, departure airport, and date. Flight lookup is in demo mode; sample matches are not live airline data.
+            Search by flight number, departure airport, and date.
           </ThemedText>
 
           <View style={styles.form}>
@@ -217,7 +232,7 @@ export default function FlightLookupScreen() {
           {searching && (
             <Card>
               <ThemedText type="smallBold">Checking flight details…</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">This demo checks its saved sample flights.</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">Looking up the latest status for your flight.</ThemedText>
             </Card>
           )}
 
@@ -227,7 +242,7 @@ export default function FlightLookupScreen() {
               <Pill variant="estimate">No match found</Pill>
               <ThemedText type="smallBold">Check the flight details</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                There’s no matching sample for this airport and date. This demo can’t determine whether a different flight is real.
+                We couldn’t find a flight for this airport and date. Double-check the flight number, airport, and date.
               </ThemedText>
             </Card>
           )}
@@ -237,11 +252,11 @@ export default function FlightLookupScreen() {
               <ThemedText type="small" themeColor="textSecondary">{lookupResult.message}</ThemedText>
             </Card>
           )}
-          {error && <ThemedText type="small" themeColor="textSecondary" style={styles.error}>{error}</ThemedText>}
+          {error && <ThemedText type="small" themeColor="textSecondary" style={{ color: theme.estimateText }}>{error}</ThemedText>}
 
           <Button label={searching ? 'Checking…' : 'Find flight'} onPress={() => void handleSearch()} disabled={searching} />
           {lookupResult?.kind === 'found' && (
-            <Button label={hasSavedFlight ? 'Update saved flight' : 'Save this flight'} onPress={() => void handleSave()} />
+            <Button label={addingFlight ? 'Add to my trip' : hasSavedFlight ? 'Update saved flight' : 'Save this flight'} onPress={() => void handleSave()} />
           )}
           {hasSavedFlight && (
             <Button label="Remove saved flight" variant="secondary" onPress={confirmRemoveFlight} />
@@ -257,7 +272,7 @@ function FlightResult({ flight }: { flight: FlightLookup }) {
     <Card>
       <View style={styles.resultHeading}>
         <ThemedText type="subtitle">{flight.flight}</ThemedText>
-        <Pill variant="neutral">Demo · not live</Pill>
+        <Pill variant="success">Live</Pill>
       </View>
       <ThemedText type="smallBold">
         {flight.origin.code} {flight.destination ? `to ${flight.destination.code}` : 'departure'}
@@ -266,7 +281,7 @@ function FlightResult({ flight }: { flight: FlightLookup }) {
         {formatTime(flight.scheduledDeparture)} · Gate {flight.gate ?? 'not posted'} · {flight.terminal ?? 'Terminal not posted'}
       </ThemedText>
       <ThemedText type="small" themeColor="textSecondary">
-        {flight.isRecorded ? 'Sample flight for the mobile demo. It has not been checked with an airline or flight API.' : `Updated ${formatTime(flight.retrievedAt)}`}
+        Updated {formatTime(flight.retrievedAt)}
       </ThemedText>
     </Card>
   );
@@ -290,7 +305,6 @@ const styles = StyleSheet.create({
   intro: { maxWidth: 440 },
   form: { gap: Spacing.three },
   todayButton: { alignSelf: 'flex-end', minHeight: 44, justifyContent: 'center', paddingHorizontal: Spacing.one },
-  error: { color: Colors.estimateText },
   resultHeading: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
 });
 

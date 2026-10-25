@@ -73,13 +73,16 @@ export interface CheckpointWait {
   retrievedAt: string;
 }
 
-export type DetailLevel = 'standard' | 'detailed';
+export type DetailLevel = 'brief' | 'detailed';
 
+// Field names match shared/schema.ts SensoryProfile so the profile serializes
+// straight into the Convex gate-change queries (nearestQuietSpots / gateChangeSteps)
+// without translation. Keep these in sync with that shape.
 export interface Profile {
   noise: 'low' | 'medium' | 'high' | null;
   crowds: 'low' | 'medium' | 'high' | null;
-  lights: 'low' | 'medium' | 'high' | null;
-  helps: string[];
+  lighting: 'low' | 'medium' | 'high' | null;
+  whatHelps: string[];
   firstFlight: boolean;
   detailLevel: DetailLevel;
 }

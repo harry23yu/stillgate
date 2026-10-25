@@ -2,7 +2,7 @@ import { StyleSheet } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { Colors } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 type PillVariant = 'success' | 'estimate' | 'neutral';
 
@@ -11,14 +11,14 @@ type PillProps = {
   variant?: PillVariant;
 };
 
-const variantStyles: Record<PillVariant, { background: string; text: string }> = {
-  success: { background: Colors.primaryLight, text: Colors.primary },
-  estimate: { background: Colors.estimateFill, text: Colors.estimateText },
-  neutral: { background: Colors.neutralFillAlt, text: Colors.textSecondary },
-};
-
 export function Pill({ children, variant = 'neutral' }: PillProps) {
-  const colors = variantStyles[variant];
+  const theme = useTheme();
+  const variantColors: Record<PillVariant, { background: string; text: string }> = {
+    success: { background: theme.primaryLight, text: theme.primary },
+    estimate: { background: theme.estimateFill, text: theme.estimateText },
+    neutral: { background: theme.neutralFillAlt, text: theme.textSecondary },
+  };
+  const colors = variantColors[variant];
 
   return (
     <ThemedView style={[styles.pill, { backgroundColor: colors.background }]}>

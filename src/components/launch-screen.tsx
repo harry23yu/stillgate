@@ -1,5 +1,5 @@
 import * as SplashScreen from 'expo-splash-screen';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
@@ -12,7 +12,9 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { ThemedText } from '@/components/themed-text';
-import { Colors, Fonts, Spacing } from '@/constants/theme';
+import { Fonts, Spacing, type Palette } from '@/constants/theme';
+import { useSettings } from '@/contexts/settings';
+import { useTheme } from '@/hooks/use-theme';
 
 /** Calm, on-brand launch screen. Doubles as the startup splash and the
  *  "getting ready" loading state. Held for a minimum so it never flickers,
@@ -22,7 +24,11 @@ const TAGLINE = 'A calmer way through the airport.';
 const A11Y_LABEL = `Stillgate. ${TAGLINE} Loading.`;
 
 export function LaunchScreen() {
-  const reduced = useReducedMotion();
+  const osReduced = useReducedMotion();
+  const { settings } = useSettings();
+  const reduced = osReduced || settings.reducedMotion;
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const [visible, setVisible] = useState(true);
   const started = useRef(false);
 
@@ -104,10 +110,10 @@ export function LaunchScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: Palette) => StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: Colors.background,
+    backgroundColor: c.background,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
@@ -142,6 +148,6 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: Colors.primary,
+    backgroundColor: c.primary,
   },
 });

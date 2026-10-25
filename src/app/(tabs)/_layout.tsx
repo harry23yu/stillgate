@@ -2,18 +2,19 @@ import { Tabs } from 'expo-router';
 
 import { IconSymbol } from '@/components/icon-symbol';
 import { ThemedText } from '@/components/themed-text';
-import { Colors } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 export default function TabLayout() {
+  const theme = useTheme();
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.textSecondary,
+        tabBarActiveTintColor: theme.primary,
+        tabBarInactiveTintColor: theme.textSecondary,
         tabBarStyle: {
-          backgroundColor: Colors.surface,
-          borderTopColor: Colors.neutralFillAlt,
+          backgroundColor: theme.surface,
+          borderTopColor: theme.neutralFillAlt,
           borderTopWidth: 1,
           elevation: 0,
           shadowOpacity: 0,
@@ -36,7 +37,7 @@ export default function TabLayout() {
         name="calm-guide"
         options={{
           title: 'My trip',
-          tabBarIcon: ({ color }) => <IconSymbol name="map.fill" size={24} color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol name="figure.walk" size={24} color={color} />,
         }}
       />
       <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: ({ color }) => <IconSymbol name="person.crop.circle" size={24} color={color} /> }} />

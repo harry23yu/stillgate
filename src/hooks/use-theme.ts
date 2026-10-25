@@ -1,6 +1,12 @@
-import { Colors } from '@/constants/theme';
+import { useColorScheme } from 'react-native';
 
-/** Stillgate uses a single fixed palette, so this just returns it. */
-export function useTheme() {
-  return Colors;
+import { Colors, ColorsDark, type Palette } from '@/constants/theme';
+import { useSettings } from '@/contexts/settings';
+
+/** Returns the active palette based on the theme preference and the OS scheme. */
+export function useTheme(): Palette {
+  const { settings } = useSettings();
+  const system = useColorScheme();
+  const scheme = settings.theme === 'system' ? system ?? 'light' : settings.theme;
+  return scheme === 'dark' ? ColorsDark : Colors;
 }

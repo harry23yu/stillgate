@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMutation, useQuery } from 'convex/react';
 import { Alert, Image, Pressable, ScrollView, StyleSheet, View, type ImageSourcePropType, type LayoutChangeEvent, type ScrollViewInstance } from 'react-native';
 
 import { Button } from '@/components/button';
@@ -7,10 +8,23 @@ import { Chip } from '@/components/chip';
 import { IconSymbol } from '@/components/icon-symbol';
 import { Pill } from '@/components/pill';
 import { ThemedText } from '@/components/themed-text';
-import { Colors, Spacing } from '@/constants/theme';
+import { Spacing, type Palette } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { estimateWalkMinutes, getAirport, YOU_POSITION } from '@/data/client';
 import type { Airport, AirportCode, FlightLookup, Place, PlaceType } from '@/data/types';
 import { focusForGate, mapPointForGate, mapPointForPlace, MAP_IMAGE_SIZE, type AirportMapFocus, type MapPoint } from '@/lib/sfo-map-layout';
+import { api } from '../../convex/_generated/api';
+
+// Live traveler "is this still accurate?" reports are backed by Convex. Only airports seeded into
+// the Convex "airports" table accept reports today (the SFO sample); others fall back to a static note.
+const hasConvex = Boolean(process.env.EXPO_PUBLIC_CONVEX_URL);
+const REPORTS_ENABLED_AIRPORTS: AirportCode[] = ['SFO'];
+
+// shared/data/sfo.json seeds spot ids prefixed with the airport code
+// (local "sensory-room-t1" -> seeded "sfo-sensory-room-t1"). Map local -> seeded until the two are unified.
+function convexSpotId(airportCode: AirportCode, place: Place): string {
+  return `${airportCode.toLowerCase()}-${place.id}`;
+}
 
 const FILTERS: { type: PlaceType; label: string }[] = [
   { type: 'quiet', label: 'Quiet spots' },
@@ -186,6 +200,9 @@ export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapPr
     [airport, selectedId],
   );
 
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+
   if (!airport) {
     return null;
   }
@@ -241,7 +258,7 @@ export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapPr
     <View style={styles.container}>
       {!airport.verified && (
         <View style={styles.demoNotice}>
-          <IconSymbol name="info.circle.fill" size={18} color={Colors.primary} />
+          <IconSymbol name="info.circle.fill" size={18} color={theme.primary} />
           <View style={styles.demoNoticeCopy}>
             <ThemedText type="smallBold">
               {airportCode === 'CHS' ? 'Charleston demo map' : 'Approximate map locations'}
@@ -286,9 +303,9 @@ export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapPr
 
       {flight && flightFocus && (
         <Pressable onPress={() => focusMap(flightFocus)} accessibilityRole="button" style={styles.flightShortcut}>
-          <IconSymbol name="airplane" size={16} color={Colors.primary} />
+          <IconSymbol name="airplane" size={16} color={theme.primary} />
           <ThemedText type="smallBold" themeColor="primary">{`My flight · ${flight.flight} · Gate ${flight.gate}`}</ThemedText>
-          <IconSymbol name="chevron.right" size={14} color={Colors.primary} />
+          <IconSymbol name="chevron.right" size={14} color={theme.primary} />
         </Pressable>
       )}
 
@@ -296,13 +313,13 @@ export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapPr
         <ThemedText type="small" themeColor="textSecondary">Zoom in for gate details, then drag to explore.</ThemedText>
         <View style={styles.zoomControls}>
           <Pressable accessibilityRole="button" accessibilityLabel="Zoom out" accessibilityState={{ disabled: zoom <= 1 }} disabled={zoom <= 1} onPress={() => { setSelectedCluster(null); setSelectedId(null); setZoom((value) => Math.max(1, Number((value - 0.4).toFixed(1)))); }} style={[styles.zoomButton, zoom <= 1 && styles.zoomButtonDisabled]}>
-            <IconSymbol name="minus" size={18} color={Colors.text} />
+            <IconSymbol name="minus" size={18} color={theme.text} />
           </Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel="Zoom in" accessibilityState={{ disabled: zoom >= 2.6 }} disabled={zoom >= 2.6} onPress={() => { setSelectedCluster(null); setSelectedId(null); setZoom((value) => Math.min(2.6, Number((value + 0.4).toFixed(1)))); }} style={[styles.zoomButton, zoom >= 2.6 && styles.zoomButtonDisabled]}>
-            <IconSymbol name="plus" size={18} color={Colors.text} />
+            <IconSymbol name="plus" size={18} color={theme.text} />
           </Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel="Show whole airport" onPress={() => focusMap('all')} style={styles.zoomButton}>
-            <IconSymbol name="arrow.counterclockwise" size={17} color={Colors.text} />
+            <IconSymbol name="arrow.counterclockwise" size={17} color={theme.text} />
           </Pressable>
         </View>
       </View>
@@ -367,7 +384,7 @@ export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapPr
                       mapPositionStyle(group.point, imageLayout, imageSize),
                       selectedId === place.id && styles.loudZoneSelected,
                     ]}>
-                    <IconSymbol name="waveform" size={15} color={Colors.estimateText} />
+                    <IconSymbol name="waveform" size={15} color={theme.estimateText} />
                   </Pressable>
                 );
               }
@@ -384,7 +401,7 @@ export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapPr
                   <IconSymbol
                     name={PIN_ICON[place.type]}
                     size={26}
-                    color={place.type === 'quiet' ? Colors.primary : Colors.border}
+                    color={place.type === 'quiet' ? theme.primary : theme.border}
                   />
                 </Pressable>
               );
@@ -410,10 +427,10 @@ export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapPr
 
       {airport.places.length > 0 && (
         <View style={styles.legend}>
-          <LegendItem icon="moon.zzz.fill" color={Colors.primary} label="Quiet" />
-          <LegendItem icon="info.circle.fill" color={Colors.border} label="Service" />
-          <LegendItem icon="fork.knife" color={Colors.border} label="Food" />
-          <LegendItem icon="square.dashed" color={Colors.estimateBorder} label={airportCode === 'CHS' ? 'Busy area · sample' : 'Busy area · estimate'} />
+          <LegendItem icon="moon.zzz.fill" color={theme.primary} label="Quiet" />
+          <LegendItem icon="info.circle.fill" color={theme.border} label="Service" />
+          <LegendItem icon="fork.knife" color={theme.border} label="Food" />
+          <LegendItem icon="square.dashed" color={theme.estimateBorder} label={airportCode === 'CHS' ? 'Busy area · sample' : 'Busy area · estimate'} />
         </View>
       )}
 
@@ -522,6 +539,8 @@ function mapPositionStyle(
 }
 
 function LegendItem({ icon, color, label }: { icon: 'moon.zzz.fill' | 'info.circle.fill' | 'fork.knife' | 'square.dashed'; color: string; label: string }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.legendItem}>
       <IconSymbol name={icon} size={16} color={color} />
@@ -541,6 +560,8 @@ function NearbyPlacesCard({
   airportCode: AirportCode;
   onSelect: (place: Place) => void;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   return (
     <Card>
       <View style={styles.cardHeader}>
@@ -555,10 +576,10 @@ function NearbyPlacesCard({
           const typeLabel = airportCode === 'CHS' ? CHS_TYPE_LABEL[place.type] : TYPE_LABEL[place.type];
           const icon = place.type === 'loud' ? 'waveform' : PIN_ICON[place.type];
           const iconColor = place.type === 'quiet'
-            ? Colors.primary
+            ? theme.primary
             : place.type === 'loud'
-              ? Colors.estimateText
-              : Colors.border;
+              ? theme.estimateText
+              : theme.border;
 
           return (
             <Pressable
@@ -572,7 +593,7 @@ function NearbyPlacesCard({
                 <ThemedText type="smallBold">{place.name}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">{typeLabel}</ThemedText>
               </View>
-              <IconSymbol name="chevron.right" size={16} color={Colors.textSecondary} />
+              <IconSymbol name="chevron.right" size={16} color={theme.textSecondary} />
             </Pressable>
           );
         })}
@@ -596,6 +617,8 @@ function PlaceCard({
   onTakeMeThere: () => void;
   onReport: () => void;
 }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
   const destination = mapPointForPlace(place, airportCode);
   const walkMinutes = estimateWalkMinutes(
     { x: from.x / imageSize.width, y: from.y / imageSize.height },
@@ -620,20 +643,89 @@ function PlaceCard({
           ~{walkMinutes} min walk (estimate)
         </ThemedText>
       )}
-      <ThemedText type="small" themeColor="textSecondary">
-        Last verified {place.lastVerified}
-      </ThemedText>
-      <View style={styles.cardActions}>
-        {place.type !== 'loud' && (
+      {place.type !== 'loud' && (
+        <View style={styles.cardActions}>
           <Button label="Take me there" onPress={onTakeMeThere} style={styles.cardButton} />
-        )}
-        <Button label="Report a problem" variant="secondary" onPress={onReport} style={styles.cardButton} />
-      </View>
+        </View>
+      )}
+      {hasConvex && REPORTS_ENABLED_AIRPORTS.includes(airportCode) ? (
+        <SpotReportSection place={place} airportCode={airportCode} />
+      ) : (
+        <>
+          <ThemedText type="small" themeColor="textSecondary">
+            Last verified {place.lastVerified}
+          </ThemedText>
+          <View style={styles.cardActions}>
+            <Button label="Report a problem" variant="secondary" onPress={onReport} style={styles.cardButton} />
+          </View>
+        </>
+      )}
     </Card>
   );
 }
 
-const styles = StyleSheet.create({
+// Live trust signal + report control for one spot. Rendered only when Convex is configured and the
+// airport is seeded, so useQuery/useMutation always have a ConvexProvider above them.
+function SpotReportSection({ place, airportCode }: { place: Place; airportCode: AirportCode }) {
+  const theme = useTheme();
+  const styles = useMemo(() => makeStyles(theme), [theme]);
+  const spotId = convexSpotId(airportCode, place);
+  const summary = useQuery(api.reports.spotReportSummary, { airportCode, spotId });
+  const submitReport = useMutation(api.reports.submitReport);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const accurate = summary?.accurate ?? 0;
+  const wrong = summary?.wrong ?? 0;
+  const total = summary?.total ?? 0;
+  // Enough recent "wrong" reports, and not outweighed by confirmations: warn the next traveler.
+  const flagged = wrong >= 2 && wrong >= accurate;
+
+  async function report(verdict: 'accurate' | 'wrong') {
+    setPending(true);
+    setError(null);
+    try {
+      await submitReport({ airportCode, spotId, verdict });
+    } catch {
+      setError('We couldn’t record that just now. Please try again.');
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <View style={styles.trustSection}>
+      {summary === undefined ? (
+        <ThemedText type="small" themeColor="textSecondary">Checking traveler reports…</ThemedText>
+      ) : flagged ? (
+        <View style={styles.trustRow}>
+          <IconSymbol name="exclamationmark.triangle.fill" size={15} color={theme.estimateText} />
+          <ThemedText type="small" style={[styles.trustText, { color: theme.estimateText }]}>
+            {wrong} traveler{wrong === 1 ? '' : 's'} said this was off recently — double-check before relying on it.
+          </ThemedText>
+        </View>
+      ) : (
+        <View style={styles.trustRow}>
+          <IconSymbol name="checkmark.seal.fill" size={15} color={theme.primary} />
+          <ThemedText type="small" themeColor="textSecondary" style={styles.trustText}>
+            {total > 0
+              ? `${accurate} traveler${accurate === 1 ? '' : 's'} confirmed this recently · verified ${place.lastVerified}`
+              : `Verified ${place.lastVerified} · no traveler reports yet`}
+          </ThemedText>
+        </View>
+      )}
+
+      <ThemedText type="small" themeColor="textSecondary">Is this still right?</ThemedText>
+      <View style={styles.cardActions}>
+        <Button label="Still accurate" variant="secondary" onPress={() => void report('accurate')} disabled={pending} style={styles.cardButton} />
+        <Button label="This was off" variant="secondary" onPress={() => void report('wrong')} disabled={pending} style={styles.cardButton} />
+      </View>
+      {error && <ThemedText type="small" style={{ color: theme.estimateText }}>{error}</ThemedText>}
+    </View>
+  );
+}
+
+const makeStyles = (theme: Palette) => StyleSheet.create({
   container: {
     gap: Spacing.three,
   },
@@ -642,7 +734,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: Spacing.two,
     borderRadius: 16,
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: theme.primaryLight,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.two,
   },
@@ -661,21 +753,21 @@ const styles = StyleSheet.create({
   schematicWrapper: {
     borderRadius: 20,
     overflow: 'hidden',
-    backgroundColor: Colors.background,
+    backgroundColor: theme.background,
     borderWidth: 1,
-    borderColor: Colors.neutralFillAlt,
+    borderColor: theme.neutralFillAlt,
   },
   mapViewport: { height: 380, width: '100%' },
   wideMapViewport: { height: 250 },
   airportImage: { position: 'absolute' },
   mapTools: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.two },
   zoomControls: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  zoomButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Colors.neutralFill },
+  zoomButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: theme.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.neutralFill },
   zoomButtonDisabled: { opacity: 0.45 },
   flightShortcut: {
     minHeight: 48,
     borderRadius: 16,
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: theme.primaryLight,
     paddingHorizontal: Spacing.three,
     flexDirection: 'row',
     alignItems: 'center',
@@ -695,7 +787,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: Colors.primaryLight,
+    backgroundColor: theme.primaryLight,
   },
   flightGateMarker: {
     position: 'absolute',
@@ -708,12 +800,12 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    backgroundColor: Colors.youMarker,
+    backgroundColor: theme.youMarker,
     borderWidth: 3,
-    borderColor: Colors.surface,
+    borderColor: theme.surface,
   },
   flightGateLabel: {
-    backgroundColor: Colors.surface,
+    backgroundColor: theme.surface,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
@@ -728,8 +820,8 @@ const styles = StyleSheet.create({
     borderRadius: 17,
     borderWidth: 2,
     borderStyle: 'dashed',
-    borderColor: Colors.estimateBorder,
-    backgroundColor: Colors.estimateFill,
+    borderColor: theme.estimateBorder,
+    backgroundColor: theme.estimateFill,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -744,13 +836,13 @@ const styles = StyleSheet.create({
     marginTop: -22,
     borderRadius: 22,
     borderWidth: 3,
-    borderColor: Colors.surface,
-    backgroundColor: Colors.primary,
+    borderColor: theme.surface,
+    backgroundColor: theme.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   placeClusterCount: {
-    color: Colors.surface,
+    color: theme.surface,
   },
   nearbyPlacesList: {
     gap: Spacing.one,
@@ -761,7 +853,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: Spacing.two,
     borderTopWidth: 1,
-    borderTopColor: Colors.neutralFillAlt,
+    borderTopColor: theme.neutralFillAlt,
     paddingVertical: Spacing.two,
   },
   nearbyPlaceCopy: {
@@ -791,5 +883,16 @@ const styles = StyleSheet.create({
   },
   cardButton: {
     flexGrow: 1,
+  },
+  trustSection: {
+    gap: Spacing.two,
+  },
+  trustRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: Spacing.one,
+  },
+  trustText: {
+    flex: 1,
   },
 });

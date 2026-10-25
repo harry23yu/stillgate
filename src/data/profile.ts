@@ -2,15 +2,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import type { Profile } from '@/data/types';
 
-const STORAGE_KEY = 'stillgate.profile';
+// Bumped to v2 when the profile fields were renamed (lights→lighting, helps→whatHelps,
+// detailLevel 'standard'→'brief') so stale blobs with the old keys are ignored.
+const STORAGE_KEY = 'stillgate.profile.v2';
 
 export const defaultProfile: Profile = {
   noise: null,
   crowds: null,
-  lights: null,
-  helps: [],
+  lighting: null,
+  whatHelps: [],
   firstFlight: false,
-  detailLevel: 'standard',
+  detailLevel: 'brief',
 };
 
 export async function getProfile(): Promise<Profile> {

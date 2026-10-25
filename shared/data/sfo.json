@@ -2,7 +2,144 @@
   "code": "SFO",
   "name": "San Francisco International Airport",
   "terminals": [
-    { "id": "T1", "name": "Harvey Milk Terminal 1", "gates": ["C2"] }
+    {
+      "id": "T1",
+      "name": "Harvey Milk Terminal 1",
+      "gates": [
+        "C2",
+        "C3",
+        "C4",
+        "C5",
+        "C6",
+        "C7",
+        "C8",
+        "C9",
+        "C10",
+        "C11",
+        "B6",
+        "B7",
+        "B8",
+        "B9",
+        "B10",
+        "B11",
+        "B12",
+        "B13",
+        "B14",
+        "B15",
+        "B16",
+        "B17",
+        "B18",
+        "B19",
+        "B20",
+        "B21",
+        "B22",
+        "B23",
+        "B24",
+        "B25",
+        "B26",
+        "B27"
+      ]
+    },
+    {
+      "id": "T2",
+      "name": "Terminal 2",
+      "gates": [
+        "D1",
+        "D2",
+        "D3",
+        "D4",
+        "D5",
+        "D6",
+        "D7",
+        "D8",
+        "D9",
+        "D10",
+        "D11",
+        "D12",
+        "D13",
+        "D14",
+        "D15",
+        "D16",
+        "D17",
+        "D18"
+      ]
+    },
+    {
+      "id": "T3",
+      "name": "Terminal 3",
+      "gates": [
+        "E1",
+        "E2",
+        "E3",
+        "E4",
+        "E5",
+        "E6",
+        "E7",
+        "E8",
+        "E9",
+        "E10",
+        "E11",
+        "E12",
+        "E13",
+        "F1",
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F6",
+        "F7",
+        "F8",
+        "F9",
+        "F10",
+        "F11",
+        "F12",
+        "F13",
+        "F14",
+        "F15",
+        "F16",
+        "F17",
+        "F18",
+        "F19",
+        "F20",
+        "F21",
+        "F22"
+      ]
+    },
+    {
+      "id": "INTL",
+      "name": "International Terminal",
+      "gates": [
+        "G1",
+        "G2",
+        "G3",
+        "G4",
+        "G5",
+        "G6",
+        "G7",
+        "G8",
+        "G9",
+        "G10",
+        "G11",
+        "G12",
+        "G13",
+        "G14",
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "A9",
+        "A10",
+        "A11",
+        "A12",
+        "A13",
+        "A14",
+        "A15"
+      ]
+    }
   ],
   "lastVerified": null,
   "verifiedStatus": "basic",
@@ -24,10 +161,316 @@
         "label": "SFO Sensory Room (via project brief; page not re-checked)",
         "url": "https://fly.sfo.gov/node/15591"
       }
+    },
+    {
+      "id": "sfo-quiet-nook-c9",
+      "kind": "quiet_area",
+      "name": "Quiet seating near Gate C9",
+      "location": {
+        "terminalId": "T1",
+        "postSecurity": true,
+        "nearGate": "C9"
+      },
+      "hours": "Terminal hours",
+      "notes": "Low-traffic seating area away from the main walkway. Estimate, not field-verified.",
+      "verifiedDate": null,
+      "source": {
+        "label": "Estimate — based on space type, not a measurement",
+        "url": ""
+      }
+    },
+    {
+      "id": "sfo-yoga-room-e7",
+      "kind": "quiet_area",
+      "name": "Yoga Room",
+      "location": {
+        "terminalId": "T3",
+        "postSecurity": true,
+        "nearGate": "E7"
+      },
+      "hours": "Terminal hours",
+      "notes": "Dedicated yoga room, Boarding Area E, near Gate E7.",
+      "verifiedDate": null,
+      "source": {
+        "label": "Public airport guides, Oct 2026",
+        "url": ""
+      }
     }
   ],
-  "loudZones": [],
-  "services": [],
+  "loudZones": [
+    {
+      "id": "sfo-checkpoint-b",
+      "type": "security_checkpoint",
+      "name": "Security Checkpoint B",
+      "location": {
+        "terminalId": "T1",
+        "postSecurity": false
+      },
+      "estimatedBusyTimes": "Typically busy mid-morning and early evening. Estimate based on space type, not a measurement.",
+      "confidence": "medium"
+    },
+    {
+      "id": "sfo-food-court-t1",
+      "type": "food_court",
+      "name": "Food Court",
+      "location": {
+        "terminalId": "T1",
+        "postSecurity": true
+      },
+      "estimatedBusyTimes": "Busy around meal times near the Perry's/Farmerbrown cluster. Estimate, not a measurement.",
+      "confidence": "medium"
+    },
+    {
+      "id": "sfo-dining-cluster-b20",
+      "type": "food_court",
+      "name": "Dining Cluster — Area B",
+      "location": {
+        "terminalId": "T1",
+        "postSecurity": true,
+        "nearGate": "B20"
+      },
+      "estimatedBusyTimes": "Busy around meal times near Café X and the B20 cluster. Estimate, not a measurement.",
+      "confidence": "medium"
+    },
+    {
+      "id": "sfo-checkpoint-d",
+      "type": "security_checkpoint",
+      "name": "Security Checkpoint D",
+      "location": {
+        "terminalId": "T2",
+        "postSecurity": false
+      },
+      "estimatedBusyTimes": "Typically busy at peak times. Estimate based on space type, not a measurement.",
+      "confidence": "medium"
+    },
+    {
+      "id": "sfo-dining-cluster-d7",
+      "type": "food_court",
+      "name": "Dining Cluster — Area D",
+      "location": {
+        "terminalId": "T2",
+        "postSecurity": true,
+        "nearGate": "D7"
+      },
+      "estimatedBusyTimes": "Busy around meal times near Peet's and Andalé. Estimate, not a measurement.",
+      "confidence": "medium"
+    },
+    {
+      "id": "sfo-checkpoint-f",
+      "type": "security_checkpoint",
+      "name": "Security Checkpoint F",
+      "location": {
+        "terminalId": "T3",
+        "postSecurity": false
+      },
+      "estimatedBusyTimes": "Covers lanes F1 and F3. Estimate based on space type, not a measurement.",
+      "confidence": "medium"
+    },
+    {
+      "id": "sfo-dining-cluster-f-rotunda",
+      "type": "food_court",
+      "name": "Dining Cluster — F Gates Rotunda",
+      "location": {
+        "terminalId": "T3",
+        "postSecurity": true
+      },
+      "estimatedBusyTimes": "Busy around meal times near the F Gates Rotunda. Estimate, not a measurement.",
+      "confidence": "medium"
+    },
+    {
+      "id": "sfo-checkpoint-g",
+      "type": "security_checkpoint",
+      "name": "Security Checkpoint G",
+      "location": {
+        "terminalId": "INTL",
+        "postSecurity": false
+      },
+      "estimatedBusyTimes": "Typically busy at peak times. Estimate based on space type, not a measurement.",
+      "confidence": "medium"
+    },
+    {
+      "id": "sfo-dining-cluster-g",
+      "type": "food_court",
+      "name": "Dining Cluster — Area G",
+      "location": {
+        "terminalId": "INTL",
+        "postSecurity": true
+      },
+      "estimatedBusyTimes": "Busy around meal times near Napa Farms Market and Mustards Bar & Grill. Estimate, not a measurement.",
+      "confidence": "medium"
+    },
+    {
+      "id": "sfo-checkpoint-a",
+      "type": "security_checkpoint",
+      "name": "Security Checkpoint A",
+      "location": {
+        "terminalId": "INTL",
+        "postSecurity": false
+      },
+      "estimatedBusyTimes": "Typically busy at peak times. Estimate based on space type, not a measurement.",
+      "confidence": "medium"
+    },
+    {
+      "id": "sfo-dining-cluster-a",
+      "type": "food_court",
+      "name": "Dining Cluster — Area A",
+      "location": {
+        "terminalId": "INTL",
+        "postSecurity": true
+      },
+      "estimatedBusyTimes": "Busy around meal times near Boudin Bakery and Gott's Roadside. Estimate, not a measurement.",
+      "confidence": "medium"
+    }
+  ],
+  "services": [
+    {
+      "id": "sfo-restroom-c-mid",
+      "kind": "restroom",
+      "name": "Restroom",
+      "location": {
+        "terminalId": "T1",
+        "postSecurity": true
+      },
+      "hours": "Terminal hours",
+      "notes": "Nearest restroom to the Sensory Room.",
+      "verifiedDate": null,
+      "source": {
+        "label": "SFO official site (flysfo.com)",
+        "url": "https://www.flysfo.com"
+      }
+    },
+    {
+      "id": "sfo-info-desk-t1",
+      "kind": "special_assistance_desk",
+      "name": "Information Desk",
+      "location": {
+        "terminalId": "T1",
+        "postSecurity": true
+      },
+      "hours": "5:00 AM – 10:00 PM",
+      "notes": "Staffed help desk near the security checkpoint.",
+      "verifiedDate": null,
+      "source": {
+        "label": "SFO official site (flysfo.com)",
+        "url": "https://www.flysfo.com"
+      }
+    },
+    {
+      "id": "sfo-restroom-b9",
+      "kind": "restroom",
+      "name": "Restroom",
+      "location": {
+        "terminalId": "T1",
+        "postSecurity": true,
+        "nearGate": "B9"
+      },
+      "hours": "Terminal hours",
+      "notes": "Restroom near Gate B9.",
+      "verifiedDate": null,
+      "source": {
+        "label": "Public airport guides, Oct 2026",
+        "url": ""
+      }
+    },
+    {
+      "id": "sfo-restroom-b20",
+      "kind": "restroom",
+      "name": "Restroom",
+      "location": {
+        "terminalId": "T1",
+        "postSecurity": true,
+        "nearGate": "B20"
+      },
+      "hours": "Terminal hours",
+      "notes": "Restroom near Gate B20. Area B is ~10 min end to end; a second restroom reflects that.",
+      "verifiedDate": null,
+      "source": {
+        "label": "Public airport guides, Oct 2026",
+        "url": ""
+      }
+    },
+    {
+      "id": "sfo-restroom-d9",
+      "kind": "restroom",
+      "name": "Restroom",
+      "location": {
+        "terminalId": "T2",
+        "postSecurity": true,
+        "nearGate": "D9"
+      },
+      "hours": "Terminal hours",
+      "notes": "Restroom near Gate D9, near \"Sunset News.\"",
+      "verifiedDate": null,
+      "source": {
+        "label": "Public airport guides, Oct 2026",
+        "url": ""
+      }
+    },
+    {
+      "id": "sfo-restroom-e-mid",
+      "kind": "restroom",
+      "name": "Restroom",
+      "location": {
+        "terminalId": "T3",
+        "postSecurity": true
+      },
+      "hours": "Terminal hours",
+      "notes": "Restroom, Boarding Area E.",
+      "verifiedDate": null,
+      "source": {
+        "label": "Public airport guides, Oct 2026",
+        "url": ""
+      }
+    },
+    {
+      "id": "sfo-restroom-f-mid",
+      "kind": "restroom",
+      "name": "Restroom",
+      "location": {
+        "terminalId": "T3",
+        "postSecurity": true
+      },
+      "hours": "Terminal hours",
+      "notes": "Restroom, Boarding Area F.",
+      "verifiedDate": null,
+      "source": {
+        "label": "Public airport guides, Oct 2026",
+        "url": ""
+      }
+    },
+    {
+      "id": "sfo-restroom-g-mid",
+      "kind": "restroom",
+      "name": "Restroom",
+      "location": {
+        "terminalId": "INTL",
+        "postSecurity": true
+      },
+      "hours": "Terminal hours",
+      "notes": "Restroom, Boarding Area G.",
+      "verifiedDate": null,
+      "source": {
+        "label": "Public airport guides, Oct 2026",
+        "url": ""
+      }
+    },
+    {
+      "id": "sfo-restroom-a-mid",
+      "kind": "restroom",
+      "name": "Restroom",
+      "location": {
+        "terminalId": "INTL",
+        "postSecurity": true
+      },
+      "hours": "Terminal hours",
+      "notes": "Restroom, Boarding Area A.",
+      "verifiedDate": null,
+      "source": {
+        "label": "Public airport guides, Oct 2026",
+        "url": ""
+      }
+    }
+  ],
   "walkthrough": [],
   "links": [
     {
