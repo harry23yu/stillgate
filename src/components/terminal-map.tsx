@@ -100,6 +100,9 @@ type TerminalMapProps = {
   airportCode: AirportCode;
   flight: FlightLookup | null;
   focusPlaceId?: string;
+  // Lets the embedding page scroll the map back into view when the user taps
+  // "Take me there" from a place's detail card (which sits below the map).
+  onTakeMeThere?: () => void;
 };
 
 /**
@@ -109,7 +112,7 @@ type TerminalMapProps = {
  * ScrollView around the schematic canvas, which nests safely inside a
  * caller's own vertical scroll. See CLAUDE.md §4.
  */
-export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapProps) {
+export function TerminalMap({ airportCode, flight, focusPlaceId, onTakeMeThere }: TerminalMapProps) {
   const [airport, setAirport] = useState<Airport | null>(null);
   const [activeFilters, setActiveFilters] = useState<Record<PlaceType, boolean>>(() => ({
     quiet: true,
@@ -228,6 +231,9 @@ export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapPr
   function handleTakeMeThere(place: Place) {
     setHighlightedId(place.id);
     focusMap(place.terminal.startsWith('intl-') ? 'intl' : (place.terminal as AirportMapFocus));
+    // The detail card sits below the map; bring the map back into view so the
+    // zoom + highlighted destination pin are actually visible.
+    onTakeMeThere?.();
   }
 
   function focusMap(next: AirportMapFocus) {
@@ -324,7 +330,7 @@ export function TerminalMap({ airportCode, flight, focusPlaceId }: TerminalMapPr
       )}
 
       <View style={styles.mapTools}>
-        <ThemedText type="small" themeColor="textSecondary">Zoom in for gate details, then drag to explore.</ThemedText>
+        <ThemedText type="small" themeColor="textSecondary" style={styles.zoomCaption}>Zoom in for gate details, then drag to explore.</ThemedText>
         <View style={styles.zoomControls}>
           <Pressable accessibilityRole="button" accessibilityLabel="Zoom out" accessibilityState={{ disabled: zoom <= 1 }} disabled={zoom <= 1} onPress={() => { setSelectedCluster(null); setSelectedId(null); setZoom((value) => Math.max(1, Number((value - 0.4).toFixed(1)))); }} style={[styles.zoomButton, zoom <= 1 && styles.zoomButtonDisabled]}>
             <IconSymbol name="minus" size={18} color={theme.text} />
@@ -775,8 +781,9 @@ const makeStyles = (theme: Palette) => StyleSheet.create({
   wideMapViewport: { height: 250 },
   airportImage: { position: 'absolute' },
   mapTools: { minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.two },
-  zoomControls: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  zoomButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: theme.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.neutralFill },
+  zoomCaption: { flex: 1 },
+  zoomControls: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one, flexShrink: 0 },
+  zoomButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: theme.surface, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: theme.neutralFill },
   zoomButtonDisabled: { opacity: 0.45 },
   flightShortcut: {
     minHeight: 48,
