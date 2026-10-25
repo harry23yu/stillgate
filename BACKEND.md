@@ -214,9 +214,3 @@ Rules for records:
 - `npm run schema` regenerates `shared/airport.schema.json` from the types; run it after editing `shared/schema.ts`.
 - `SensoryProfile` is a type only. The profile stays on the device and the backend has no table for it.
 
-## Known gaps
-
-- The mobile app does not call this backend yet; it reads local mock data.
-- Walk times are a placeholder (one entry: SFO gate C2 to the sensory room).
-- SFO data comes from the project brief and has not been re-checked against the SFO page.
-- Only SFO is seeded.
