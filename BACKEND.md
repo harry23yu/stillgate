@@ -135,19 +135,26 @@ to Cartesia once. Play each demo step once before presenting and the demo no lon
 ### Reports ("Was this accurate?")
 
 ```bash
-npx convex run reports:submitReport '{"airportCode":"SFO","spotId":"sfo-sensory-room-t1","verdict":"wrong","note":"Room was closed for cleaning"}'
+npx convex run reports:submitReport '{"airportCode":"SFO","spotId":"sfo-sensory-room-t1","verdict":"wrong","note":"Room was closed for cleaning","deviceId":"test-device-0000000001"}'
 npx convex run reports:listRecentReports '{"airportCode":"SFO","spotId":"sfo-sensory-room-t1","limit":5}'
 npx convex run reports:spotReportSummary '{"airportCode":"SFO","spotId":"sfo-sensory-room-t1"}'
 ```
 
 - `reports:submitReport` (mutation): `verdict` is `"accurate"` or `"wrong"`; `note` is optional, max 280 characters.
-  `spotId` must be the id of a quiet spot, loud zone or service in that airport's record. Unknown airport or
-  spot, an over-long note, or a bad verdict is rejected and nothing is written.
+  `deviceId` is required: a random per-install id (16 to 64 letters, digits or hyphens; the app creates it in
+  `src/data/device-id.ts`).
+  `spotId` is either the id of a quiet spot, loud zone or service in that airport's record, or the document id of
+  an approved, scraped place at that airport. Unknown airport or spot, an over-long note, a bad verdict or a bad
+  device id is rejected and nothing is written.
+- One report per device per spot per day: the same device reporting the same spot again within the day updates its
+  earlier answer and returns the same report id instead of adding another vote.
+- A "wrong" report on a scraped place puts it back in the review queue (it stays published until a reviewer decides).
+  Reports never change an airport record by themselves; they are signals for a person to re-verify the pin.
 - `reports:listRecentReports` (query): newest first. `spotId` is optional; `limit` defaults to 20, max 50.
   It is live: a client subscribed to it updates when a report arrives.
 - `reports:spotReportSummary` (query): `{accurate, wrong, total, truncated}` from the 200 most recent reports for the spot.
-- Reports never change an airport record. They are signals for a person to re-verify the pin.
-- Unauthenticated, so anyone can submit and nothing limits one person's volume. Fine for the event; add rate limiting and moderation before launch.
+- No accounts. The device id and the rate limits (below) keep volume down, but a determined person can still make
+  new device ids; add moderation before a public launch.
 
 ## Rate limits
 
