@@ -154,12 +154,12 @@
         "postSecurity": true,
         "description": "Harvey Milk Terminal 1, post-security, near Gate C2"
       },
-      "hours": "5:00 a.m. to 11:00 p.m.",
-      "notes": "Quiet area, active area, and a full-scale aircraft cabin.",
-      "verifiedDate": null,
+      "hours": "5:00 a.m. to 11:00 p.m. daily",
+      "notes": "Three spaces: a quiet area, an active area, and the Cabin Experience, a full-scale aircraft interior to practice being on the plane. Open to all guests; designed for neurodivergent travelers and their families.",
+      "verifiedDate": "2026-10-25",
       "source": {
-        "label": "SFO Sensory Room (via project brief; page not re-checked)",
-        "url": "https://fly.sfo.gov/node/15591"
+        "label": "SFO Sensory Room page, checked by a team member on 2026-10-25 (page shows no publish date)",
+        "url": "https://www.flysfo.com/passengers/services/sensory-room"
       }
     },
     {
