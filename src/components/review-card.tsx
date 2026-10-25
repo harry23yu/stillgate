@@ -88,6 +88,7 @@ export function ReviewCard({ place, terminals, reviewKey }: ReviewCardProps) {
         {sourceChanged && <Pill variant="estimate">Source changed since approval</Pill>}
         {place.missingFromSource && <Pill variant="estimate">No longer on source page</Pill>}
         {place.reverifyDue && <Pill variant="estimate">{`Re-verify (last ${place.lastVerified ?? 'unknown'})`}</Pill>}
+        {place.travelerReported && <Pill variant="estimate">Traveler reported a problem</Pill>}
         {scraped.securitySide && <Pill>{`${scraped.securitySide}-security`}</Pill>}
       </View>
 
