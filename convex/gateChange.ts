@@ -15,14 +15,10 @@ const sensoryProfile = v.object({
   detailLevel: v.union(v.literal("brief"), v.literal("detailed")),
 });
 
-// PLACEHOLDER walk times in minutes: airport code -> gate -> quiet spot id.
-// Not measured. Replace with real values (walk it, or read the airport map) before verifying.
-// A missing entry means "unknown".
-const WALK_MINUTES: Record<string, Record<string, Record<string, number>>> = {
-  SFO: {
-    C2: { "sfo-sensory-room-t1": 2 },
-  },
-};
+// Measured walk times in minutes: airport code -> gate -> quiet spot id. Empty on purpose: nobody has
+// measured any yet, and an invented number is worse than none. Add entries only from a real measurement,
+// e.g.  SFO: { C2: { "sfo-sensory-room-t1": 2 } }.  A missing entry means "unknown".
+const WALK_MINUTES: Record<string, Record<string, Record<string, number>>> = {};
 
 // How much a sensory room is preferred (in minutes of walking) when the traveler is sensitive.
 const SENSORY_ROOM_BONUS_MINUTES = 3;
@@ -55,8 +51,14 @@ async function findQuietSpots(
       return {
         spot,
         walkMinutes,
-        // Unknown walk times sort last.
-        score: walkMinutes === null ? Number.POSITIVE_INFINITY : walkMinutes - bonus,
+        // Without a measured time, a spot recorded as "near" this very gate counts as closest;
+        // everything else sorts last.
+        score:
+          walkMinutes !== null
+            ? walkMinutes - bonus
+            : spot.location.nearGate?.toUpperCase() === gate
+              ? 0 - bonus
+              : Number.POSITIVE_INFINITY,
       };
     })
     .sort((a, b) => a.score - b.score);
@@ -118,10 +120,16 @@ export const gateChangeSteps = query({
       return { ...found, steps, spot: null };
     }
 
+    // Say only what the record says. Minutes appear only when someone measured them.
+    const nearGate = top.location.nearGate?.toUpperCase();
     steps.push(
-      top.walkMinutes === null
-        ? `A quiet place near you is the ${top.name}. We do not know the walking time yet.`
-        : `The nearest quiet place is the ${top.name}, about ${top.walkMinutes} minutes away (an estimate).`,
+      top.walkMinutes !== null
+        ? `The nearest quiet place is the ${top.name}, about ${top.walkMinutes} minutes away (an estimate).`
+        : nearGate === found.gate
+          ? `The nearest quiet place is the ${top.name}, right near your new gate.`
+          : nearGate
+            ? `The nearest quiet place we know of is the ${top.name}, near Gate ${nearGate}.`
+            : `The nearest quiet place we know of is the ${top.name}.`,
     );
 
     if (args.profile.detailLevel === "detailed") {

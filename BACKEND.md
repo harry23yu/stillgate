@@ -94,7 +94,7 @@ Same inputs as `nearestQuietSpots` plus an optional `fromGate`. Returns the same
 - `steps`: string[]. `brief` gives the gate change and the nearest quiet place. `detailed` adds the hours, the
   notes, and "This information has not been verified yet." when the spot has no verified date.
 - `spot`: the top spot (or `null` when the airport has none).
-- When the walk time is unknown, the step says so instead of guessing.
+- No walk times are measured yet, so the step says where the spot is, using its record ("right near your new gate" or "near Gate C2"), and never invents minutes. Minutes appear only for entries added to `WALK_MINUTES` in `convex/gateChange.ts`.
 - Returns `null` for an unknown airport.
 
 Demo chain: `simulateGateChange` -> `gateChangeSteps` (use its `toGate` and `fromGate`) -> `phrase:phraseSteps` with `steps`.
